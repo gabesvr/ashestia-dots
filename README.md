@@ -9,10 +9,19 @@
 * **Hardware:** ASUS TUF Gaming FA607NUG (AMD Ryzen 7 7445HS | NVIDIA GeForce RTX 4050 Laptop 140W)
 * **Window Manager / Compositor:** Hyprland 0.47+ (Configurado em Lua puro com `hyprland.lua`)
 * **Barra & Widgets:** QuickShell Control Center / Island (Dynamic widgets & LiquidGlass)
-* **Terminal:** foot / footclient (instantâneo via daemon systemd)
+* **Terminal:** foot / footclient (instantâneo via daemon systemd, transparência 0.80)
 * **Paleta & Cores:** Matugen (geração dinâmica de cores baseada no wallpaper)
+* **Fetch & Imagens no Terminal:** Fastfetch integrado com exibição gráfica via Sixel e rotação automática de imagens em `~/Pictures/Goticas`
 * **Visualizador de Áudio:** Cava
 * **Notificações:** Mako
+
+---
+
+## 🖤 Foot Terminal & Fastfetch Sixel
+O **Foot** vem configurado com:
+* **Transparência suave (`alpha=0.80`)** e fonte `JetBrainsMono Nerd Font`.
+* **Tema Dinâmico:** Cores sincronizadas em tempo real com o wallpaper via Matugen.
+* **Fish Greeting & Fastfetch:** Toda vez que você abre o terminal, o script seleciona automaticamente a próxima imagem da coleção em `~/Pictures/Goticas` e renderiza em alta definição direto no terminal via **Sixel Graphics**.
 
 ---
 
