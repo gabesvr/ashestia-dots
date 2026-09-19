@@ -1,33 +1,50 @@
-# ❄️ Ashestia Hyprland Rice
+# Ashestia Hyprland Rice
 
-> Setup minimalista, moderno e focado em zero-latency para jogos e produtividade diária no Linux (CachyOS / Arch Linux).
-
----
-
-## 🖥️ Especificações do Setup do Criador
-* **Sistema Operacional:** CachyOS (Linux Kernel BORE / cachyos)
-* **Hardware:** ASUS TUF Gaming FA607NUG (AMD Ryzen 7 7445HS | NVIDIA GeForce RTX 4050 Laptop 140W)
-* **Window Manager / Compositor:** Hyprland 0.47+ (Configurado em Lua puro com `hyprland.lua`)
-* **Barra & Widgets:** QuickShell Control Center / Island (Dynamic widgets & LiquidGlass)
-* **Terminal:** foot / footclient (instantâneo via daemon systemd, transparência 0.80)
-* **Paleta & Cores:** Matugen (geração dinâmica de cores baseada no wallpaper)
-* **Fetch & Imagens no Terminal:** Fastfetch integrado com exibição gráfica via Sixel e rotação automática de imagens em `~/Pictures/Goticas`
-* **Visualizador de Áudio:** Cava
-* **Notificações:** Mako
+> Minimalist, modern, zero-latency gaming and daily productivity setup for Linux (CachyOS / Arch Linux).
 
 ---
 
-## 🖤 Foot Terminal & Fastfetch Sixel
-O **Foot** vem configurado com:
-* **Transparência suave (`alpha=0.80`)** e fonte `JetBrainsMono Nerd Font`.
-* **Tema Dinâmico:** Cores sincronizadas em tempo real com o wallpaper via Matugen.
-* **Fish Greeting & Fastfetch:** Toda vez que você abre o terminal, o script seleciona automaticamente a próxima imagem da coleção em `~/Pictures/Goticas` e renderiza em alta definição direto no terminal via **Sixel Graphics**.
+## Gallery
+
+### Workspace
+![Workspace](assets/screenshots/workspace.png)
+
+### Control Center
+![Control Center](assets/screenshots/control_center.png)
+
+### Dynamic Island
+![Dynamic Island](assets/screenshots/dynamic_island.png)
 
 ---
 
-## 🚀 Instalação Rápida
+## Hardware & System Specifications
 
-Clone o repositório ou baixe o arquivo comprimido, entre na pasta e execute:
+* **Operating System:** CachyOS (Kernel BORE / linux-cachyos)
+* **Hardware:** ASUS TUF Gaming FA607NUG
+* **Processor:** AMD Ryzen 7 7445HS
+* **Graphics:** NVIDIA GeForce RTX 4050 Laptop (140W TGP)
+* **Compositor:** Hyprland 0.47+ (Configured in Lua via `hyprland.lua`)
+* **Bar & Widgets:** QuickShell Control Center / Island (Dynamic widgets & LiquidGlass)
+* **Terminal:** foot / footclient (Instant startup via systemd daemon, alpha 0.80)
+* **Color Palette:** Matugen (Dynamic color generation synchronized with wallpaper)
+* **Terminal Fetch:** Fastfetch with Sixel graphics and automatic picture rotation
+* **Audio Visualizer:** Cava
+* **Notifications:** Mako
+
+---
+
+## Foot Terminal & Fastfetch Sixel
+
+The terminal setup includes:
+* **Smooth Transparency:** `alpha=0.80` with `JetBrainsMono Nerd Font`.
+* **Dynamic Palette:** Colors generated and synchronized in real time via Matugen based on the active wallpaper.
+* **Fish Greeting & Fastfetch:** Automatic circular rotation of pictures from `~/Pictures/Goticas` rendered in high resolution directly in the terminal using Sixel graphics.
+
+---
+
+## Installation
+
+Clone the repository, navigate into the directory, and run the installation script:
 
 ```bash
 git clone https://github.com/gabesvr/ashestia-dots.git
@@ -38,24 +55,26 @@ chmod +x install.sh
 
 ---
 
-## ⌨️ Principais Atalhos (Keybindings)
+## Keybindings
 
-| Teclas de Atalho | Ação |
+| Shortcut | Action |
 | :--- | :--- |
-| `Super + Enter` | Abrir Terminal (`footclient`) |
-| `Super + B` | Abrir Navegador (`Firefox`) |
-| `Super + E` | Abrir Gerenciador de Arquivos (`Thunar`) |
-| `Super + Space` | Abrir Island Menu / QuickShell Control Center |
-| `Super + Shift + S` | Captura de tela por seleção de região |
-| `Print` | Captura de tela cheia |
-| `Super + Q` | Fechar janela ativa |
-| `Super + V` | Alternar janela flutuante |
-| `Super + [1-9]` | Alternar para o Workspace correspondente |
+| `Super + Enter` | Open Terminal (`footclient`) |
+| `Super + B` | Open Browser (`Firefox`) |
+| `Super + E` | Open File Manager (`Thunar`) |
+| `Super + Space` | Toggle Control Center / Island Menu |
+| `Super + Shift + S` | Region Screenshot |
+| `Print` | Fullscreen Screenshot |
+| `Super + Q` | Close Active Window |
+| `Super + F` | Toggle Floating Window |
+| `Super + [1-9]` | Switch to Workspace |
 
 ---
 
-## 📺 Configuração de Monitores
-Por padrão, o arquivo `hyprland.lua` vem configurado para **modo universal automático** (`preferred, auto, 1`), adaptando-se a qualquer monitor e resolução. Caso queira configurar uma taxa de quadros fixa (como 144Hz ou 180Hz) ou múltiplos monitores, basta editar a seção `---- MONITORS ----` em `~/.config/hypr/hyprland.lua`.
+## Monitor Configuration
+
+By default, `hyprland.lua` is set to auto-detect any monitor and native resolution (`preferred, auto, 1`). To configure a fixed refresh rate (such as 144Hz or 180Hz) or multi-monitor setup, edit the `MONITORS` section in `~/.config/hypr/hyprland.lua`.
 
 ---
-*Criado por Gabriel • Comunidade Ashestia*
+
+Created by Gabriel • Ashestia Community
