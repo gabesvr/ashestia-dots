@@ -14,9 +14,11 @@ Item {
 
     signal seekTo(real positionSec)
 
+    property real syncOffsetMs: 0
+
     readonly property int _currentIndex: {
         if (!syncedLyrics || syncedLyrics.length === 0) return 0;
-        var adj = currentPositionMs + 250;
+        var adj = currentPositionMs + syncOffsetMs;
         var idx = 0;
         for (var i = 0; i < syncedLyrics.length; i++) {
             if (syncedLyrics[i].timestamp <= adj) idx = i;

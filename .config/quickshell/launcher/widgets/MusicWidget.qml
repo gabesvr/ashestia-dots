@@ -58,19 +58,82 @@ PanelWindow {
     ]
     property string lyricsTrackKey: ""
 
-    // Position ticking timer while playing
-    Timer {
-        interval: 1000
-        running: musicWindow.isPlaying && musicWindow.playbackLen > 0
-        repeat: true
-        onTriggered: {
-            if (musicWindow.playbackPos < musicWindow.playbackLen) {
-                musicWindow.playbackPos += 1;
+    // High-precision MPRIS position sync & sub-second clock
+    property real precisePositionMs: playbackPos * 1000
+    property real _lastAnchorRealSec: 0
+    property real _lastAnchorSystemTimeMs: 0
+
+    function syncWithRealPosition(sec) {
+        if (isNaN(sec) || sec < 0) return;
+        _lastAnchorRealSec = sec;
+        _lastAnchorSystemTimeMs = Date.now();
+        playbackPos = sec;
+        precisePositionMs = sec * 1000;
+    }
+
+    Process {
+        id: posQueryProc
+        command: ["playerctl", "position"]
+        stdout: SplitParser {
+            onRead: (line) => {
+                const sec = parseFloat(line.trim());
+                if (!isNaN(sec) && sec >= 0) {
+                    if (musicWindow._lastAnchorSystemTimeMs === 0) {
+                        musicWindow.syncWithRealPosition(sec);
+                    } else {
+                        const elapsed = (Date.now() - musicWindow._lastAnchorSystemTimeMs) / 1000;
+                        const expectedSec = musicWindow._lastAnchorRealSec + elapsed;
+                        if (Math.abs(sec - expectedSec) > 0.15) {
+                            musicWindow.syncWithRealPosition(sec);
+                        }
+                    }
+                }
             }
         }
     }
 
-    onTrackTitleChanged: checkFetchLyrics(trackTitle, trackArtist, playbackLen)
+    // Consulta periódica (1s) para reancorar e evitar drift
+    Timer {
+        id: posAnchorTimer
+        interval: 1000
+        running: musicWindow.isPlaying
+        repeat: true
+        onTriggered: {
+            if (!posQueryProc.running) posQueryProc.running = true;
+        }
+    }
+
+    // Interpolação suave a cada 50ms para lyrics 100% em tempo real com Spotify
+    Timer {
+        id: preciseTickTimer
+        interval: 50
+        running: musicWindow.isPlaying
+        repeat: true
+        onTriggered: {
+            if (musicWindow._lastAnchorSystemTimeMs > 0) {
+                const elapsed = Date.now() - musicWindow._lastAnchorSystemTimeMs;
+                const curSec = musicWindow._lastAnchorRealSec + (elapsed / 1000);
+                if (musicWindow.playbackLen > 0 && curSec <= musicWindow.playbackLen) {
+                    musicWindow.playbackPos = curSec;
+                    musicWindow.precisePositionMs = curSec * 1000;
+                }
+            }
+        }
+    }
+
+    onPlayerStatusChanged: {
+        if (isPlaying) {
+            posQueryProc.running = true;
+        } else {
+            _lastAnchorSystemTimeMs = 0;
+        }
+    }
+
+    onTrackTitleChanged: {
+        _lastAnchorSystemTimeMs = 0;
+        posQueryProc.running = true;
+        checkFetchLyrics(trackTitle, trackArtist, playbackLen);
+    }
     onTrackArtistChanged: checkFetchLyrics(trackTitle, trackArtist, playbackLen)
 
     Component.onCompleted: {
@@ -189,11 +252,16 @@ PanelWindow {
     function parseLrc(lrc) {
         var lines = lrc.split("\n");
         var res = [];
-        var re = /\[(\d{2}):(\d{2})[.:](\d{2})\](.*)/;
+        var re = /\[(\d{1,2}):(\d{2})[.:](\d{2,3})\](.*)/;
         for (var i = 0; i < lines.length; i++) {
             var m = re.exec(lines[i]);
             if (m) {
-                var ms = parseInt(m[1]) * 60000 + parseInt(m[2]) * 1000 + parseInt(m[3]) * 10;
+                var min = parseInt(m[1]);
+                var sec = parseInt(m[2]);
+                var fracStr = m[3];
+                var frac = parseInt(fracStr);
+                var fracMs = fracStr.length === 2 ? (frac * 10) : frac;
+                var ms = (min * 60000) + (sec * 1000) + fracMs;
                 var txt = m[4].trim();
                 if (txt.length > 0) {
                     res.push({ timestamp: ms, text: txt });
@@ -224,7 +292,7 @@ PanelWindow {
     }
 
     function seekPosition(sec) {
-        musicWindow.playbackPos = sec;
+        musicWindow.syncWithRealPosition(sec);
         seekCmd.command = ["playerctl", "position", String(Math.round(sec))];
         seekCmd.running = true;
     }
@@ -597,7 +665,7 @@ PanelWindow {
                 anchors.bottom: tallBottomArea.top
                 anchors.bottomMargin: 10
                 syncedLyrics: musicWindow.syncedLyrics
-                currentPositionMs: musicWindow.playbackPos * 1000
+                currentPositionMs: musicWindow.precisePositionMs
                 fontFamily: sfRegular.name
                 baseFontSize: 16
                 blurEnabled: true

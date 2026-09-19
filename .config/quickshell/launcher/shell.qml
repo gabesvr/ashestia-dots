@@ -125,7 +125,6 @@ ShellRoot {
         desktopMusic.targetY = l.music.y;
 
         saveLayoutState(idx);
-        showLayoutToast(l.name, l.desc, idx);
     }
 
     function nextLayout() {
@@ -190,7 +189,7 @@ ShellRoot {
         WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
         WlrLayershell.exclusiveZone: -1
         color: "transparent"
-        visible: toastOpacity > 0.001
+        visible: false
 
         mask: Region {
             item: toastCard
@@ -278,11 +277,7 @@ ShellRoot {
     }
 
     function showLayoutToast(title, desc, idx) {
-        layoutToastWindow.toastTitle = title;
-        layoutToastWindow.toastDesc = desc;
-        layoutToastWindow.toastIndex = idx;
-        layoutToastWindow.toastOpacity = 1.0;
-        toastHideTimer.restart();
+        // Desativado: sem notificação flutuante no topo ao trocar de layout
     }
 
     DynamicIsland {
@@ -352,7 +347,6 @@ ShellRoot {
         trackArtist: controlCenter.mediaArtist
         trackArtUrl: controlCenter.mediaArt
         playerStatus: controlCenter.mediaStat
-        playbackPos: controlCenter.mediaPos
         playbackLen: controlCenter.mediaLen
     }
 
