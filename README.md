@@ -21,7 +21,7 @@
 Clone o repositório ou baixe o arquivo comprimido, entre na pasta e execute:
 
 ```bash
-git clone https://github.com/<seu-usuario>/ashestia-dots.git
+git clone https://github.com/gabesvr/ashestia-dots.git
 cd ashestia-dots
 chmod +x install.sh
 ./install.sh
