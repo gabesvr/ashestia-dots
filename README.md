@@ -4,16 +4,9 @@
 
 ---
 
-## Gallery
+## Preview
 
-### Workspace
-![Workspace](assets/screenshots/workspace.png)
-
-### Control Center
-![Control Center](assets/screenshots/control_center.png)
-
-### Dynamic Island
-![Dynamic Island](assets/screenshots/dynamic_island.png)
+![Ashestia Desktop Widgets](assets/screenshots/widgets.png)
 
 ---
 
@@ -24,7 +17,7 @@
 * **Processor:** AMD Ryzen 7 7445HS
 * **Graphics:** NVIDIA GeForce RTX 4050 Laptop (140W TGP)
 * **Compositor:** Hyprland 0.47+ (Configured in Lua via `hyprland.lua`)
-* **Bar & Widgets:** QuickShell Control Center / Island (Dynamic widgets & LiquidGlass)
+* **Bar & Desktop Widgets:** QuickShell Desktop Widgets (Clock, Calendar, Weather, Music with Synced Lyrics & LiquidGlass)
 * **Terminal:** foot / footclient (Instant startup via systemd daemon, alpha 0.80)
 * **Color Palette:** Matugen (Dynamic color generation synchronized with wallpaper)
 * **Terminal Fetch:** Fastfetch with Sixel graphics and automatic picture rotation

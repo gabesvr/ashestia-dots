@@ -5,32 +5,4 @@ if [ -z "$IMAGE" ] || [ ! -f "$IMAGE" ]; then
     exit 1
 fi
 
-# Expand to absolute path
-IMAGE="$(realpath "$IMAGE")"
-mkdir -p "$HOME/.config/hypr"
-echo "$IMAGE" > "$HOME/.config/hypr/current_wallpaper"
-
-# Obter todos os monitores conectados
-MONITORS=$(hyprctl monitors -j 2>/dev/null | jq -r '.[].name' 2>/dev/null)
-if [ -z "$MONITORS" ]; then
-    MONITORS="HDMI-A-1 eDP-1"
-fi
-
-# Gerar hyprpaper.conf para persistência no próximo boot
-{
-    echo "preload = $IMAGE"
-    for mon in $MONITORS; do
-        echo "wallpaper = $mon,$IMAGE"
-    done
-    echo "splash = false"
-} > "$HOME/.config/hypr/hyprpaper.conf"
-
-# Se hyprpaper não estiver rodando, inicia via compositor
-if ! pgrep -x hyprpaper > /dev/null 2>&1; then
-    hyprctl eval 'hl.exec_cmd("hyprpaper")' > /dev/null 2>&1 || (nohup hyprpaper > /dev/null 2>&1 & disown)
-    sleep 0.4
-fi
-
-for mon in $MONITORS; do
-    hyprctl hyprpaper wallpaper "$mon,$IMAGE"
-done
+"$HOME/.config/quickshell/scripts/wallpaper_tool.sh" set "$IMAGE"

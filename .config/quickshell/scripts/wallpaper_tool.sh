@@ -1,6 +1,5 @@
 #!/bin/bash
 WALLPAPER_DIR="$HOME/Pictures/Wallpapers"
-HYPRPAPER_CONF="$HOME/.config/hypr/hyprpaper.conf"
 CURRENT_WP_FILE="$HOME/.config/hypr/current_wallpaper"
 COLORS_CACHE="$HOME/.config/quickshell/current_colors.json"
 
@@ -112,7 +111,6 @@ cmd_set() {
     if [ -n "$old_pids" ]; then
         kill $old_pids 2>/dev/null
     fi
-    pkill -x hyprpaper 2>/dev/null
 
     # 2. Write configs atomically
     echo "$path" > "$CURRENT_WP_FILE"
@@ -135,7 +133,6 @@ cmd_init() {
     local wp
     wp=$(get_active)
     if [ -n "$wp" ] && [ -f "$wp" ]; then
-        pkill -x hyprpaper 2>/dev/null
         pkill -x swaybg 2>/dev/null
         nohup swaybg -i "$wp" -m fill </dev/null >/dev/null 2>&1 &
     fi

@@ -7,8 +7,17 @@ import QtQuick
 Item {
     id: root
 
-    property int hour12: 12     // 1..12
+    property int hour: 12
+    property alias hour12: root.hour
     property int minute: 0      // 0..59
+    property bool useLeadingZero: false
+
+    readonly property string formattedHour: {
+        if (root.hour === 0) return "00";
+        if (root.useLeadingZero && root.hour < 10) return "0" + root.hour;
+        return String(root.hour);
+    }
+
     // Desired font size. Actual rendered size is `_effectiveFontSize`,
     // which scales down to fit `availableWidth` when the content (hour
     // + colon + minute) would overflow (e.g. 12:45 vs 9:03).
@@ -27,7 +36,7 @@ Item {
         font.pixelSize: root.fontPixelSize
         font.weight: Font.Medium
         font.letterSpacing: -root.fontPixelSize * 0.03
-        text: String(root.hour12)
+        text: root.formattedHour
     }
     TextMetrics {
         id: minMetrics
@@ -71,7 +80,7 @@ Item {
         Text {
             id: hourText
             anchors.verticalCenter: parent.verticalCenter
-            text: root.hour12
+            text: root.formattedHour
             color: root.textColor
             opacity: root.digitOpacity
             font.family: root.fontFamily

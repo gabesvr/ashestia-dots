@@ -89,6 +89,7 @@ PanelWindow {
     signal requestIslandGlide()
     signal wallpaperChanged(string path)
     signal openLaunchpadRequested()
+    signal layoutChangeRequested(string layoutArg)
 
     property real volumeVal: 0.4
     property bool isMuted: false
@@ -764,6 +765,9 @@ PanelWindow {
                     root.hideIsland()
                 } else if (cmd === "dnd" || cmd === "dnd:toggle" || cmd === "mode:dnd") {
                     root.toggleDnd()
+                } else if (cmd.startsWith("layout:") || cmd === "layout") {
+                    const arg = cmd.startsWith("layout:") ? cmd.substring(7).trim() : "next"
+                    root.layoutChangeRequested(arg)
                 }
             }
         }
@@ -903,7 +907,7 @@ PanelWindow {
         command: ["playerctl", "metadata", "--follow", "--format",
             "{{title}}│{{artist}}│{{mpris:artUrl}}│{{xesam:url}}│{{position}}│{{mpris:length}}│{{status}}│{{playerName}}"
         ]
-        running: false
+        running: true
         stdout: SplitParser {
             onRead: (line) => {
                 try {

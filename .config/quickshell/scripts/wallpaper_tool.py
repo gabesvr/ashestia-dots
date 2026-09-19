@@ -1,2 +1,2 @@
 #!/bin/bash
-exec "$HOME/.config/quickshell/scripts/wallpaper_tool.sh" "$@"
+exec /home/gabriel/.config/quickshell/scripts/wallpaper_tool.sh "$@"

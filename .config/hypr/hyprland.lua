@@ -1,4 +1,3 @@
-local home = os.getenv("HOME")
 -- ============================================================
 -- HYPRLAND CONFIG - FA607NUG | RTX 4050 | Ryzen 7 7445HS
 -- CachyOS | Kernel 7.2.x-cachyos | Zero-latency Gaming Setup
@@ -11,28 +10,28 @@ require("env")
 local terminal    = "footclient"
 local browser     = "firefox"
 local fileManager = "thunar"
-local islandMenu    = home .. "/.local/bin/island-toggle"     -- QuickShell Control Center / Island
+local islandMenu    = "/home/gabriel/.local/bin/island-toggle"     -- QuickShell Control Center / Island
 
 
 ------------------
 ---- MONITORS ----
 ------------------
 
--- Configuração universal automática (detecta qualquer monitor, resolução e taxa de quadros)
+-- Monitor externo: AOC 24G4 via HDMI — 1920x1080@180Hz (Sem G-Sync/VRR para máximo FPS e menor latência)
 hl.monitor({
-    output   = "",
-    mode     = "preferred",
-    position = "auto",
-    scale    = 1,
+output   = "HDMI-A-1",
+mode     = "1920x1080@180",
+position = "0x0",
+scale    = 1,
+bitdepth = 8,
+vrr      = 0,
 })
 
--- Exemplo para monitor específico (descomente e ajuste conforme seu setup):
--- hl.monitor({
---     output   = "HDMI-A-1",
---     mode     = "1920x1080@180",
---     position = "0x0",
---     scale    = 1,
--- })
+-- Monitor interno: eDP-1 desativado (usando apenas o monitor externo para máxima performance)
+hl.monitor({
+output   = "eDP-1",
+disabled = true,
+})
 
 
 ---------------------
@@ -51,8 +50,8 @@ hl.exec_cmd("wl-clip-persist --clipboard regular")
 hl.exec_cmd("wl-paste --watch cliphist store")
 -- Terminal Foot Server (abertura instantânea com zero cold start e memória compartilhada)
 hl.exec_cmd("foot --server")
--- Wallpaper daemon ultraleve (swaybg ~18MB vs 230MB do hyprpaper)
-hl.exec_cmd(home .. "/.config/quickshell/scripts/wallpaper_tool.sh init")
+-- Wallpaper daemon ultraleve (swaybg)
+hl.exec_cmd("/home/gabriel/.config/quickshell/scripts/wallpaper_tool.sh init")
 -- QuickShell Daemon (Control Center Island - com limites e cgroup via systemd)
 hl.exec_cmd("systemctl --user restart quickshell")
 -- Garantir tema escuro global no portal e apps GTK (WhiteSur Dark - macOS icons)
@@ -66,7 +65,7 @@ hl.exec_cmd("sudo /usr/local/bin/gaming-mode.sh")
 -- Desligar completamente o backlight da tela do laptop (eDP-1 desativada, 0% brilho/luz)
 hl.exec_cmd("brightnessctl -d nvidia_0 set 0")
 -- Carregar plugin HyprGlass (Apple Liquid Glass nativo)
-hl.exec_cmd("hyprctl plugin load " .. home .. "/.config/hypr/plugins/hyprglass.so")
+hl.exec_cmd("hyprctl plugin load /home/gabriel/.config/hypr/plugins/hyprglass.so")
 end)
 
 
@@ -89,16 +88,16 @@ animate_manual_resizes       = true,
 vrr                          = 0,     -- G-Sync / VRR 100% DESLIGADO: máximo de FPS destravado sem sincronização
 render_unfocused_fps         = 30,    -- reduz carga de GPU e alocação de buffers em janelas em segundo plano (janela ativa continua em 180Hz/144Hz)
 },
-debug = {
-disable_logs = false,
-},
+    debug = {
+        disable_logs = true,
+    },
 })
 
 -- Direct scanout: desativado no desktop para eliminar micro-travamentos ao dividir janelas
 -- Direct scanout: ativado (1) para enviar buffers diretamente ao display em fullscreen (zero latency e max FPS)
 -- Estado do Xwayland (controlado pelo Switch Apple no Control Center)
 local xwayland_enabled = true
-local xw_f = io.open(home .. "/.config/hypr/xwayland_state", "r")
+local xw_f = io.open("/home/gabriel/.config/hypr/xwayland_state", "r")
 if xw_f then
     local content = xw_f:read("*all") or ""
     xw_f:close()
@@ -234,8 +233,11 @@ scroll_factor           = 0.9,   -- rolagem suave e controlada
 },
 },
 cursor = {
-no_hardware_cursors = false,  -- hardware cursor = menos latência
-no_warps            = true,   -- sem saltos bruscos de cursor ao trocar foco (elimina micro-stutter visual)
+no_hardware_cursors = false,  -- hardware cursor na GPU (menor latência possível)
+no_warps            = true,   -- sem saltos bruscos de cursor ao trocar foco
+use_cpu_buffer      = 0,      -- 0 = pure GPU VRAM buffer, zero cópia CPU->GPU no DRM
+min_refresh_rate    = 180,    -- trava atualização do cursor em 180Hz nativos (evita cair para 24Hz)
+hotspot_padding     = 0,
 },
 })
 
@@ -275,7 +277,7 @@ fingers   = 4,
 direction = "down",
 action    = {
 finish = function()
-hl.exec_cmd(home .. "/.local/bin/island-toggle")
+hl.exec_cmd("/home/gabriel/.local/bin/island-toggle")
 end
 }
 })
@@ -284,7 +286,7 @@ fingers   = 4,
 direction = "up",
 action    = {
 finish = function()
-hl.exec_cmd(home .. "/.local/bin/island-toggle")
+hl.exec_cmd("/home/gabriel/.local/bin/island-toggle")
 end
 }
 })
@@ -335,13 +337,19 @@ hl.bind(mainMod .. " + I",             hl.dsp.exec_cmd(islandMenu))    -- Contro
 hl.bind(mainMod .. " + C",             hl.dsp.exec_cmd(islandMenu))    -- Control Center Island (alias)
 hl.bind(mainMod .. " + B",             hl.dsp.exec_cmd(islandMenu .. " mini")) -- Mini Dynamic Island (iPhone 17 / Mac Notch)
 hl.bind(mainMod .. " + N",             hl.dsp.exec_cmd(islandMenu .. " mini")) -- Mini Dynamic Island (alias Notch)
+hl.bind(mainMod .. " + G",             hl.dsp.exec_cmd(islandMenu .. " layout next")) -- Alternar layouts dos Widgets Liquid Glass
+hl.bind(mainMod .. " + ALT + 1",       hl.dsp.exec_cmd(islandMenu .. " layout 1"))    -- Layout 1: Sonoma Flanks
+hl.bind(mainMod .. " + ALT + 2",       hl.dsp.exec_cmd(islandMenu .. " layout 2"))    -- Layout 2: Executive Shelf
+hl.bind(mainMod .. " + ALT + 3",       hl.dsp.exec_cmd(islandMenu .. " layout 3"))    -- Layout 3: Smart Sidebar
+hl.bind(mainMod .. " + ALT + 4",       hl.dsp.exec_cmd(islandMenu .. " layout 4"))    -- Layout 4: Four Corners
+hl.bind(mainMod .. " + ALT + 5",       hl.dsp.exec_cmd(islandMenu .. " layout 5"))    -- Layout 5: Creative Studio
 hl.bind(mainMod .. " + V",             hl.dsp.window.pseudo())
 hl.bind(mainMod .. " + P",             hl.dsp.layout("togglesplit"))
 
 -- Screenshot — grim + slurp + wl-copy (salva arquivo E copia pro clipboard)
-hl.bind("SUPER + SHIFT + S",  hl.dsp.exec_cmd(home .. "/.local/bin/screenshot region"), { locked = false })
-hl.bind("Print",               hl.dsp.exec_cmd(home .. "/.local/bin/screenshot full"))
-hl.bind("SUPER + Print",       hl.dsp.exec_cmd(home .. "/.local/bin/screenshot window"))
+hl.bind("SUPER + SHIFT + S",  hl.dsp.exec_cmd("/home/gabriel/.local/bin/screenshot region"), { locked = false })
+hl.bind("Print",               hl.dsp.exec_cmd("/home/gabriel/.local/bin/screenshot full"))
+hl.bind("SUPER + Print",       hl.dsp.exec_cmd("/home/gabriel/.local/bin/screenshot window"))
 
 -- Lock screen (SUPER+ALT+L ou SUPER+Escape)
 hl.bind(mainMod .. " + ALT + L",       hl.dsp.exec_cmd("hyprlock"))

@@ -36,44 +36,16 @@ PanelWindow {
         source: Qt.resolvedUrl("fonts/sf_pro_rounded.otf")
     }
 
-    // Saved position persistence
-    property real cardX: 45
-    property real cardY: 45
-
-    Process {
-        id: posLoader
-        command: ["cat", "/home/gabriel/.config/quickshell/clock_pos.json"]
-        running: true
-        stdout: SplitParser {
-            onRead: (line) => {
-                try {
-                    const data = JSON.parse(line.trim());
-                    if (data.x !== undefined && data.y !== undefined) {
-                        full.x = data.x;
-                        full.y = data.y;
-                    }
-                } catch(e) {}
-            }
-        }
-    }
-
-    Process {
-        id: posSaver
-        running: false
-    }
-
-    function savePosition(newX, newY) {
-        const json = "{\"x\":" + Math.round(newX) + ",\"y\":" + Math.round(newY) + "}";
-        posSaver.command = ["sh", "-c", "echo '" + json + "' > /home/gabriel/.config/quickshell/clock_pos.json"];
-        posSaver.running = true;
-    }
+    // Animated Target Position (Driven by Layout Manager)
+    property real targetX: 50
+    property real targetY: 55
 
     function setWallpaper(path) {
         glass.setWallpaper(path);
     }
 
     // Time & City state
-    property string cityCode: "LOCAL"
+    property string cityCode: "PORTO"
     property real tzOffsetHours: 1.0
     property bool useLocalTime: true
     property date currentTime: new Date()
@@ -95,6 +67,8 @@ PanelWindow {
         return new Date(utcMs + (clockWindow.tzOffsetHours * 3600000));
     }
 
+    property bool is24Hour: true
+    readonly property int hour24: displayDate.getHours()
     readonly property int hour12: ((displayDate.getHours() + 11) % 12) + 1
     readonly property int minute: displayDate.getMinutes()
 
@@ -112,31 +86,27 @@ PanelWindow {
 
     function cycleCity() {
         clockWindow.currentTime = new Date();
-        if (clockWindow.cityCode === "LOCAL") {
-            clockWindow.cityCode = "TYO";
-            clockWindow.tzOffsetHours = 9.0;
-            clockWindow.useLocalTime = false;
-        } else if (clockWindow.cityCode === "TYO") {
-            clockWindow.cityCode = "NYC";
-            clockWindow.tzOffsetHours = -4.0;
-            clockWindow.useLocalTime = false;
-        } else if (clockWindow.cityCode === "NYC") {
-            clockWindow.cityCode = "LON";
-            clockWindow.tzOffsetHours = 1.0;
+        if (clockWindow.cityCode === "PORTO") {
+            clockWindow.cityCode = "LAUSANNE";
+            clockWindow.tzOffsetHours = 2.0;
             clockWindow.useLocalTime = false;
         } else {
-            clockWindow.cityCode = "LOCAL";
+            clockWindow.cityCode = "PORTO";
+            clockWindow.tzOffsetHours = 1.0;
             clockWindow.useLocalTime = true;
         }
     }
 
-    // The movable Clock Card
+    // The Clock Card
     Item {
         id: full
-        x: clockWindow.cardX
-        y: clockWindow.cardY
+        x: clockWindow.targetX
+        y: clockWindow.targetY
         width: 240
         height: 140
+
+        Behavior on x { NumberAnimation { duration: 700; easing.type: Easing.OutQuint } }
+        Behavior on y { NumberAnimation { duration: 700; easing.type: Easing.OutQuint } }
 
         // Liquid Glass Frosted Background
         LiquidGlass {
@@ -178,8 +148,9 @@ PanelWindow {
             fontFamily: barlowMedium.name
             fontPixelSize: Math.min(full.width, full.height) * 0.60
             availableWidth: Math.max(40, full.width - 2 * Math.min(full.width, full.height) * 0.15)
-            hour12: clockWindow.hour12
+            hour: clockWindow.is24Hour ? clockWindow.hour24 : clockWindow.hour12
             minute: clockWindow.minute
+            useLeadingZero: clockWindow.is24Hour
             digitOpacity: 0.55
             textColor: "#ffffff"
         }
@@ -215,49 +186,21 @@ PanelWindow {
             renderType: Text.NativeRendering
         }
 
-        // 144Hz Smooth Native Dragging & Click Interaction
+        // Smooth Click & Specular Interaction (Dragging disabled - driven by Layouts)
         MouseArea {
-            id: dragArea
+            id: clickArea
             anchors.fill: parent
             hoverEnabled: true
-            cursorShape: dragArea.drag.active ? Qt.ClosedHandCursor : Qt.PointingHandCursor
-
-            drag.target: full
-            drag.axis: Drag.XAndYAxis
-            drag.threshold: 8
-            drag.minimumX: 10
-            drag.minimumY: 10
-            drag.maximumX: clockWindow.width > 0 ? (clockWindow.width - full.width - 10) : 1500
-            drag.maximumY: clockWindow.height > 0 ? (clockWindow.height - full.height - 10) : 900
-
-            property real pressX: 0
-            property real pressY: 0
-            property bool isDrag: false
+            cursorShape: Qt.PointingHandCursor
 
             onPositionChanged: (mouse) => {
                 glass.mouseU = mouse.x / Math.max(1, full.width);
                 glass.mouseV = mouse.y / Math.max(1, full.height);
                 glass.mouseFade = 1;
-
-                if (pressed) {
-                    if (drag.active || Math.hypot(mouse.x - pressX, mouse.y - pressY) > 8) {
-                        isDrag = true;
-                    }
-                }
             }
 
-            onPressed: (mouse) => {
-                pressX = mouse.x;
-                pressY = mouse.y;
-                isDrag = false;
-            }
-
-            onReleased: (mouse) => {
-                if (!isDrag && !drag.active) {
-                    clockWindow.cycleCity();
-                } else {
-                    clockWindow.savePosition(full.x, full.y);
-                }
+            onClicked: {
+                clockWindow.cycleCity();
             }
 
             onEntered: {

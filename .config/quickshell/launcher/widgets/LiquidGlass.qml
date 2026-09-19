@@ -42,37 +42,6 @@ Item {
         glass.markDirty();
     }
 
-    // Startup wallpaper reader from persistent config
-    Process {
-        id: initWpLoader
-        command: ["cat", "/home/gabriel/.config/hypr/current_wallpaper"]
-        running: true
-        stdout: SplitParser {
-            onRead: (line) => {
-                const p = line.trim();
-                if (p.startsWith("/") && (!glass.wallpaperPath || glass.wallpaperPath === "")) {
-                    glass.setWallpaper(p);
-                }
-            }
-        }
-    }
-
-    // Instant external wallpaper watcher using Linux kernel inotify (tail -F) - 0% CPU, 0ms lag
-    Process {
-        id: wpTailWatcher
-        command: ["tail", "-F", "-n", "1", "/home/gabriel/.config/hypr/current_wallpaper"]
-        running: true
-        stdout: SplitParser {
-            onRead: (line) => {
-                const p = line.trim();
-                if (p.startsWith("/") && p !== glass.wallpaperPath) {
-                    glass.setWallpaper(p);
-                }
-            }
-        }
-    }
-
-
     // Specular mouse tracking
     property real mouseU: -1
     property real mouseV: -1
@@ -82,7 +51,7 @@ Item {
         NumberAnimation { duration: 180; easing.type: Easing.OutQuad }
     }
 
-    // Optimized wallpaper source (sourceSize capped to screen to save RAM)
+    // High-fidelity wallpaper source (960x540 provides crisp refraction while sharing a single 2MB Qt pixmap cache)
     Image {
         id: wallpaperItem
         source: glass.wallpaperPath ? (glass.wallpaperPath.startsWith("/") ? ("file://" + glass.wallpaperPath) : glass.wallpaperPath) : ""
@@ -139,7 +108,7 @@ Item {
     }
 
     readonly property bool _blurActive: glass.blurRadius > 0
-    readonly property int _maxBlurIters: 6
+    readonly property int _maxBlurIters: 3
     readonly property int _blurIters: {
         if (!_blurActive) return 0;
         var r = glass.blurRadius;
@@ -231,39 +200,9 @@ Item {
     }
 
     ShaderEffect {
-        id: down4; anchors.fill: parent; visible: false
-        fragmentShader: Qt.resolvedUrl("shaders/kawase_down.frag.qsb")
-        property variant source: down3Tex
-        property vector2d halfpixel: Qt.vector2d(0.5 / Math.max(1, down3Tex.textureSize.width),
-                                                  0.5 / Math.max(1, down3Tex.textureSize.height))
-    }
-    ShaderEffectSource {
-        id: down4Tex; anchors.fill: parent; opacity: 0
-        sourceItem: glass._blurIters >= 4 ? down4 : null
-        live: glass._chainLive; hideSource: true; smooth: true
-        textureSize: Qt.size(Math.max(1, Math.round(glass._widgetW / 16)),
-                             Math.max(1, Math.round(glass._widgetH / 16)))
-    }
-
-    // Dual Kawase Blur: Upsample Passes
-    ShaderEffect {
-        id: up4; anchors.fill: parent; visible: false
-        fragmentShader: Qt.resolvedUrl("shaders/kawase_up.frag.qsb")
-        property variant source: down4Tex
-        property vector2d halfpixel: Qt.vector2d(0.5 / Math.max(1, down3Tex.textureSize.width),
-                                                  0.5 / Math.max(1, down3Tex.textureSize.height))
-    }
-    ShaderEffectSource {
-        id: up4Tex; anchors.fill: parent; opacity: 0
-        sourceItem: glass._blurIters >= 4 ? up4 : null
-        live: glass._chainLive; hideSource: true; smooth: true
-        textureSize: down3Tex.textureSize
-    }
-
-    ShaderEffect {
         id: up3; anchors.fill: parent; visible: false
         fragmentShader: Qt.resolvedUrl("shaders/kawase_up.frag.qsb")
-        property variant source: glass._blurIters >= 4 ? up4Tex : down3Tex
+        property variant source: down3Tex
         property vector2d halfpixel: Qt.vector2d(0.5 / Math.max(1, down2Tex.textureSize.width),
                                                   0.5 / Math.max(1, down2Tex.textureSize.height))
     }
