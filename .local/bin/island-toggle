@@ -1,0 +1,26 @@
+#!/bin/bash
+# Control Center & Mini Dynamic Island toggle — instantâneo via FIFO Quickshell
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+export WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-1}"
+export HYPRLAND_INSTANCE_SIGNATURE="${HYPRLAND_INSTANCE_SIGNATURE}"
+
+PIPE=/tmp/qs-island-fifo
+DAEMON_PATH="$HOME/.config/quickshell/launcher"
+CMD="${1:-toggle}"
+
+[ -p "$PIPE" ] || mkfifo "$PIPE"
+
+# Garante que NUNCA existam duas instâncias de quickshell rodando simultaneamente
+QS_PIDS=$(pgrep -x quickshell)
+QS_COUNT=$(echo "$QS_PIDS" | grep -c '^[0-9]')
+
+if [ "$QS_COUNT" -gt 1 ]; then
+    systemctl --user restart quickshell 2>/dev/null || { killall -9 quickshell 2>/dev/null; sleep 0.2; env MALLOC_ARENA_MAX=2 MALLOC_TRIM_THRESHOLD_=131072 quickshell -d -p "$DAEMON_PATH"; }
+    sleep 0.4
+elif [ "$QS_COUNT" -eq 0 ]; then
+    systemctl --user start quickshell 2>/dev/null || env MALLOC_ARENA_MAX=2 MALLOC_TRIM_THRESHOLD_=131072 quickshell -d -p "$DAEMON_PATH"
+    sleep 0.4
+fi
+
+# Manda o comando pelo FIFO (instantâneo)
+timeout 1 bash -c "echo '$CMD' > '$PIPE'"

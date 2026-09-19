@@ -1,0 +1,13 @@
+
+[config]
+reload_apps = true
+source_color_index = 0
+
+[templates.foot]
+input_path = "/home/gabriel/.config/matugen/templates/foot.ini"
+output_path = "/home/gabriel/.config/foot/theme.ini"
+post_hook = "pkill -SIGUSR1 foot 2>/dev/null || true"
+
+[templates.cava]
+input_path = "/home/gabriel/.config/matugen/templates/cava.conf"
+output_path = "/home/gabriel/.config/cava/config"

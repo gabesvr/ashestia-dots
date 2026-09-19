@@ -1,0 +1,29 @@
+#!/bin/bash
+DIR="$HOME/Pictures/Screenshots"
+mkdir -p "$DIR"
+TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+
+case "$1" in
+    region)
+        GEOM=$(slurp) || exit 0
+        [ -z "$GEOM" ] && exit 0
+        FILE="$DIR/region-$TIMESTAMP.png"
+        grim -g "$GEOM" "$FILE" || exit 1
+        wl-copy --type image/png < "$FILE"
+        notify-send -a "Screenshot" "Captura de Região" "Salva em $FILE e copiada!" -i "$FILE" -t 2000 2>/dev/null || true
+        ;;
+    window)
+        GEOM=$(hyprctl activewindow -j | jq -r '"\(.at[0]),\(.at[1]) \(.size[0])x\(.size[1])"') || exit 0
+        [ -z "$GEOM" ] && exit 0
+        FILE="$DIR/window-$TIMESTAMP.png"
+        grim -g "$GEOM" "$FILE" || exit 1
+        wl-copy --type image/png < "$FILE"
+        notify-send -a "Screenshot" "Captura de Janela" "Salva em $FILE e copiada!" -i "$FILE" -t 2000 2>/dev/null || true
+        ;;
+    full|*)
+        FILE="$DIR/screen-$TIMESTAMP.png"
+        grim "$FILE" || exit 1
+        wl-copy --type image/png < "$FILE"
+        notify-send -a "Screenshot" "Captura de Tela" "Salva em $FILE e copiada!" -i "$FILE" -t 2000 2>/dev/null || true
+        ;;
+esac
