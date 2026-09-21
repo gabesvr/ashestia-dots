@@ -12,7 +12,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_DIR="$HOME/.config"
 BIN_DIR="$HOME/.local/bin"
 
-mkdir -p "$CONFIG_DIR" "$BIN_DIR" "$HOME/Pictures/Wallpapers" "$HOME/Pictures/Goticas"
+mkdir -p "$CONFIG_DIR" "$BIN_DIR" "$HOME/Pictures/Wallpapers"
 
 # 1. Copy configuration directories (.config)
 echo "--> Copying dotfiles to $CONFIG_DIR..."
@@ -50,11 +50,9 @@ if [ -d "$SCRIPT_DIR/wallpapers" ]; then
     cp -r "$SCRIPT_DIR/wallpapers/"* "$HOME/Pictures/Wallpapers/"
 fi
 
-# 5. Copy terminal picture assets
-if [ -d "$SCRIPT_DIR/pictures/Goticas" ]; then
-    echo "--> Copying Fastfetch and Foot graphics to $HOME/Pictures/Goticas..."
-    cp -r "$SCRIPT_DIR/pictures/Goticas/"* "$HOME/Pictures/Goticas/"
-    [ -d "$SCRIPT_DIR/pictures/Goticas/.cache" ] && cp -r "$SCRIPT_DIR/pictures/Goticas/.cache" "$HOME/Pictures/Goticas/"
+# 5. Restart QuickShell so the widgets load (systemd user service)
+if command -v systemctl >/dev/null 2>&1; then
+    systemctl --user restart quickshell 2>/dev/null || true
 fi
 
 echo "==> Installation finished successfully."
