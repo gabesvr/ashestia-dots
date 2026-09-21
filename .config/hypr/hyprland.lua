@@ -17,19 +17,19 @@ local islandMenu    = "/home/gabriel/.local/bin/island-toggle"     -- QuickShell
 ---- MONITORS ----
 ------------------
 
--- Monitor externo: AOC 24G4 via HDMI — 1920x1080@180Hz (Sem G-Sync/VRR para máximo FPS e menor latência)
+-- Monitor interno: display do laptop FA607 (1920x1200@144Hz, escala 1.25 para legibilidade em 16")
 hl.monitor({
-output   = "HDMI-A-1",
-mode     = "1920x1080@180",
+output   = "eDP-1",
+mode     = "1920x1200@144",
 position = "0x0",
-scale    = 1,
+scale    = 1.25,
 bitdepth = 8,
 vrr      = 0,
 })
 
--- Monitor interno: eDP-1 desativado (usando apenas o monitor externo para máxima performance)
+-- Monitor externo: AOC 24G4 desativado (usando apenas o monitor do laptop)
 hl.monitor({
-output   = "eDP-1",
+output   = "HDMI-A-1",
 disabled = true,
 })
 
@@ -44,7 +44,7 @@ hl.on("hyprland.start", function()
 -- Portal XDG (necessário para screenshare, file picker, etc.)
 hl.exec_cmd("dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP")
 -- Agente Polkit (permissões gráficas)
-hl.exec_cmd("/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1")
+hl.exec_cmd("systemctl --user start hyprpolkitagent")
 -- Persistência de clipboard (copiar e colar não se perde quando app fecha)
 hl.exec_cmd("wl-clip-persist --clipboard regular")
 hl.exec_cmd("wl-paste --watch cliphist store")
@@ -62,10 +62,8 @@ hl.exec_cmd("gsettings set org.gnome.desktop.interface icon-theme 'WhiteSur-dark
 -- hl.exec_cmd("thunar --daemon")
 -- Aplicar gaming mode
 hl.exec_cmd("sudo /usr/local/bin/gaming-mode.sh")
--- Desligar completamente o backlight da tela do laptop (eDP-1 desativada, 0% brilho/luz)
-hl.exec_cmd("brightnessctl -d nvidia_0 set 0")
--- Carregar plugin HyprGlass (Apple Liquid Glass nativo)
-hl.exec_cmd("hyprctl plugin load /home/gabriel/.config/hypr/plugins/hyprglass.so")
+-- Garantir backlight da tela do laptop ativo (eDP-1 ativa)
+hl.exec_cmd("brightnessctl -d nvidia_0 set 80%")
 end)
 
 
@@ -112,7 +110,7 @@ hl.config({
     },
     xwayland = {
         enabled = xwayland_enabled,
-        force_zero_scaling = true,
+        force_zero_scaling = false,
     },
 })
 
@@ -163,41 +161,36 @@ ignore_opacity = true,
 ---- ANIMAÇÕES ----
 --------------------
 
--- ── Curvas de animação estilo Apple macOS (Vivas, Orgânicas e Fluidas) ──────────
--- macFluid: curva de desaceleração suave e viva da Apple — movimento elegante com tempo para ser apreciado
-hl.curve("macFluid",     { type = "bezier", points = { {0.25, 1.00}, {0.50, 1.0} } })
--- macMove: rastreamento dinâmico e suave — no float desliza fluido atrás do mouse, no tiling transiciona limpo sem repelir
-hl.curve("macMove",      { type = "bezier", points = { {0.20, 1.00}, {0.40, 1.0} } })
--- macClose: fechamento direto, limpo e orgânico sem hesitação
-hl.curve("macClose",     { type = "bezier", points = { {0.25, 0.00}, {0.00, 1.0} } })
--- macSpaces: deslizamento suave idêntico ao Spaces / Mission Control do trackpad macOS
-hl.curve("macSpaces",    { type = "bezier", points = { {0.20, 1.00}, {0.20, 1.0} } })
-hl.curve("easeOutQuint", { type = "bezier", points = { {0.23, 1.00}, {0.32, 1.0} } })
-hl.curve("fast",         { type = "bezier", points = { {0.05, 0.95}, {0.10, 1.0} } })
+-- ── Curvas estilo macOS ─────────────────────────────────────────────
+-- Springs: física de mola como no macOS (leve overshoot, sem parada seca)
+hl.curve("macOpen",   { type = "spring", mass = 1, stiffness = 260, dampening = 22 })  -- abrir: quase crítico, um leve "respiro"
+hl.curve("macMove",   { type = "spring", mass = 1, stiffness = 300, dampening = 30 })  -- mover/redimensionar: firme e sem oscilar
+hl.curve("macSpaces", { type = "spring", mass = 1, stiffness = 220, dampening = 28 })  -- trocar de Space: desliza e assenta suave
+-- Bézier: saídas rápidas e fades
+hl.curve("macClose",  { type = "bezier", points = { {0.32, 0.00}, {0.67, 0.00} } })    -- easeInCubic: fecha acelerando
+hl.curve("macFade",   { type = "bezier", points = { {0.25, 0.10}, {0.25, 1.00} } })    -- ease padrão da Apple
 
--- ── Janelas (Física Fluida e Visível) ─────────────────────────────────
--- Abrir: popin visível (começa em 78% e expande suavemente com fade fluido) (~350ms)
-hl.animation({ leaf = "windows",     enabled = true, speed = 3.5, bezier = "macFluid", style = "popin 78%" })
-hl.animation({ leaf = "windowsIn",   enabled = true, speed = 3.5, bezier = "macFluid", style = "popin 78%" })
--- Fechar: saída rápida e limpa (~200ms)
-hl.animation({ leaf = "windowsOut",  enabled = true, speed = 2.0, bezier = "macClose", style = "popin 85%" })
--- Mover e arrastar: animação contínua e visível seguindo o mouse no float, firme no tiling (~360ms)
-hl.animation({ leaf = "windowsMove", enabled = true, speed = 3.6, bezier = "macMove" })
+-- ── Janelas ───────────────────────────────────────────────────────────
+hl.animation({ leaf = "windowsIn",   enabled = true, speed = 1, spring = "macOpen",  style = "popin 88%" })
+hl.animation({ leaf = "windowsOut",  enabled = true, speed = 2.2, bezier = "macClose", style = "popin 92%" })
+hl.animation({ leaf = "windowsMove", enabled = true, speed = 1, spring = "macMove" })
 
--- ── Fades (Transparência sincronizada e viva) ────────────────────────
-hl.animation({ leaf = "fade",        enabled = true, speed = 2.8, bezier = "macFluid" })
-hl.animation({ leaf = "fadeIn",      enabled = true, speed = 2.8, bezier = "macFluid" })
-hl.animation({ leaf = "fadeOut",     enabled = true, speed = 2.0, bezier = "macClose" })
-hl.animation({ leaf = "fadeDim",     enabled = true, speed = 2.8, bezier = "macFluid" })
-hl.animation({ leaf = "fadeShadow",  enabled = true, speed = 2.8, bezier = "macFluid" })
+-- ── Fades ─────────────────────────────────────────────────────────────
+hl.animation({ leaf = "fadeIn",      enabled = true, speed = 3.0, bezier = "macFade" })
+hl.animation({ leaf = "fadeOut",     enabled = true, speed = 2.2, bezier = "macFade" })
+hl.animation({ leaf = "fadeDim",     enabled = true, speed = 3.0, bezier = "macFade" })
+hl.animation({ leaf = "fadeShadow",  enabled = true, speed = 3.0, bezier = "macFade" })
+hl.animation({ leaf = "border",      enabled = true, speed = 3.0, bezier = "macFade" })
 
--- ── Layers (Dynamic Island, launcher, notificações) ──────────────────
-hl.animation({ leaf = "layersIn",    enabled = true, speed = 3.0, bezier = "macFluid", style = "popin 88%" })
-hl.animation({ leaf = "layersOut",   enabled = true, speed = 2.0, bezier = "macClose", style = "fade" })
+-- ── Layers (launcher, notificações, etc.) ─────────────────────────────
+hl.animation({ leaf = "layersIn",    enabled = true, speed = 1, spring = "macOpen",  style = "popin 92%" })
+hl.animation({ leaf = "layersOut",   enabled = true, speed = 2.2, bezier = "macClose", style = "fade" })
 
--- ── Workspaces (Transição de áreas estilo Spaces do macOS) ───────────
-hl.animation({ leaf = "workspacesIn",  enabled = true, speed = 3.6, bezier = "macSpaces", style = "slidefade 20%" })
-hl.animation({ leaf = "workspacesOut", enabled = true, speed = 3.2, bezier = "macSpaces", style = "slidefade 20%" })
+-- ── Workspaces (Spaces) ───────────────────────────────────────────────
+hl.animation({ leaf = "workspacesIn",  enabled = true, speed = 1, spring = "macSpaces", style = "slide" })
+hl.animation({ leaf = "workspacesOut", enabled = true, speed = 1, spring = "macSpaces", style = "slide" })
+hl.animation({ leaf = "specialWorkspaceIn",  enabled = true, speed = 1, spring = "macOpen", style = "slidevert" })
+hl.animation({ leaf = "specialWorkspaceOut", enabled = true, speed = 1, spring = "macOpen", style = "slidevert" })
 
 
 ---------------
@@ -206,7 +199,7 @@ hl.animation({ leaf = "workspacesOut", enabled = true, speed = 3.2, bezier = "ma
 
 hl.config({
 input = {
-kb_layout   = "us",
+kb_layout   = "es",
 kb_variant  = "",
 kb_model    = "",
 kb_options  = "",
@@ -236,7 +229,7 @@ cursor = {
 no_hardware_cursors = false,  -- hardware cursor na GPU (menor latência possível)
 no_warps            = true,   -- sem saltos bruscos de cursor ao trocar foco
 use_cpu_buffer      = 0,      -- 0 = pure GPU VRAM buffer, zero cópia CPU->GPU no DRM
-min_refresh_rate    = 180,    -- trava atualização do cursor em 180Hz nativos (evita cair para 24Hz)
+min_refresh_rate    = 144,    -- trava atualização do cursor em 144Hz nativos do laptop (evita cair para 24Hz)
 hotspot_padding     = 0,
 },
 })
@@ -339,7 +332,7 @@ hl.bind(mainMod .. " + B",             hl.dsp.exec_cmd(islandMenu .. " mini")) -
 hl.bind(mainMod .. " + N",             hl.dsp.exec_cmd(islandMenu .. " mini")) -- Mini Dynamic Island (alias Notch)
 hl.bind(mainMod .. " + G",             hl.dsp.exec_cmd(islandMenu .. " layout next")) -- Alternar layouts dos Widgets Liquid Glass
 hl.bind(mainMod .. " + ALT + 1",       hl.dsp.exec_cmd(islandMenu .. " layout 1"))    -- Layout 1: Sonoma Flanks
-hl.bind(mainMod .. " + ALT + 2",       hl.dsp.exec_cmd(islandMenu .. " layout 2"))    -- Layout 2: Executive Shelf
+hl.bind(mainMod .. " + ALT + 2",       hl.dsp.exec_cmd(islandMenu .. " layout 2"))    -- Layout 2: Top Shelf
 hl.bind(mainMod .. " + ALT + 3",       hl.dsp.exec_cmd(islandMenu .. " layout 3"))    -- Layout 3: Smart Sidebar
 hl.bind(mainMod .. " + ALT + 4",       hl.dsp.exec_cmd(islandMenu .. " layout 4"))    -- Layout 4: Four Corners
 hl.bind(mainMod .. " + ALT + 5",       hl.dsp.exec_cmd(islandMenu .. " layout 5"))    -- Layout 5: Creative Studio
@@ -350,10 +343,6 @@ hl.bind(mainMod .. " + P",             hl.dsp.layout("togglesplit"))
 hl.bind("SUPER + SHIFT + S",  hl.dsp.exec_cmd("/home/gabriel/.local/bin/screenshot region"), { locked = false })
 hl.bind("Print",               hl.dsp.exec_cmd("/home/gabriel/.local/bin/screenshot full"))
 hl.bind("SUPER + Print",       hl.dsp.exec_cmd("/home/gabriel/.local/bin/screenshot window"))
-
--- Lock screen (SUPER+ALT+L ou SUPER+Escape)
-hl.bind(mainMod .. " + ALT + L",       hl.dsp.exec_cmd("hyprlock"))
-hl.bind(mainMod .. " + Escape",        hl.dsp.exec_cmd("hyprlock"))
 
 -- Reload config
 hl.bind(mainMod .. " + SHIFT + R",     hl.dsp.exec_cmd("hyprctl reload"))
@@ -470,13 +459,22 @@ hl.bind("XF86AudioPause",       hl.dsp.exec_cmd("playerctl play-pause"),  { lock
 hl.bind("XF86AudioPlay",        hl.dsp.exec_cmd("playerctl play-pause"),  { locked = true })
 hl.bind("XF86AudioPrev",        hl.dsp.exec_cmd("playerctl previous"),    { locked = true })
 
--- === Gaming Mode toggle ===
-hl.bind(mainMod .. " + G", hl.dsp.exec_cmd("sudo /usr/local/bin/gaming-mode.sh"), { locked = false })
+-- === Gaming Mode toggle === (SUPER+G já é usado para alternar layouts dos widgets)
+hl.bind(mainMod .. " + SHIFT + G", hl.dsp.exec_cmd("sudo /usr/local/bin/gaming-mode.sh"), { locked = false })
 
 
 --------------------------------
 ---- WINDOWS AND WORKSPACES ----
 --------------------------------
+
+-- Mapear todas as workspaces 1-10 para o monitor ativo (eDP-1)
+for i = 1, 10 do
+hl.workspace_rule({
+workspace = tostring(i),
+monitor   = "eDP-1",
+default   = (i == 1),
+})
+end
 
 -- Tamanho padrão para janelas flutuantes sem tamanho memorizado
 hl.window_rule({
@@ -492,7 +490,6 @@ match  = { class = "^(foot-float)$" },
 float  = true,
 size   = "960 600",
 move   = "cursor_x-480 cursor_y-300",
-tag    = "+hyprglass_disabled",
 })
 
 
@@ -585,76 +582,19 @@ blur = true,
 ignore_alpha = 0.01,
 })
 
---------------------------------
----- HYPRGLASS LIQUID GLASS ----
---------------------------------
-
-if hl.plugin and hl.plugin.hyprglass then
-local hg = hl.plugin.hyprglass
-
--- Preset Crystal Liquid Glass: Apple-style translucent, non-dark, refractive glass
-hg.preset("crystal_liquid", {
-glass_opacity        = 1.0,
-blur_strength        = 2.0,
-blur_iterations      = 3,
-refraction_strength  = 1.0,
-chromatic_aberration = 1.0,
-fresnel_strength     = 0.90,
-specular_strength    = 1.0,
-edge_thickness       = 0.09,
-lens_distortion      = 0.60,
-brightness           = 1.15,
-contrast             = 1.08,
-saturation           = 1.25,
-vibrancy             = 0.35,
-adaptive_dim         = 0.0,
-adaptive_boost       = 0.35,
-tint_color           = 0xffffff24,
-light = {
-brightness       = 1.18,
-adaptive_dim     = 0.0,
-adaptive_boost   = 0.35,
-tint_color       = 0xffffff28,
-},
-dark = {
-brightness       = 1.15,
-adaptive_dim     = 0.0,
-adaptive_boost   = 0.32,
-tint_color       = 0xffffff22,
-},
-})
-
-hg.config({
-default_theme  = "light",
-layers         = { enabled = false },
-})
-
--- quickshell sem contorno/borda de hyprglass
--- hg.layer("quickshell", { preset = "crystal_liquid", mask_threshold = 0.05 })
--- hg.layer("quickshell:bezel", { preset = "crystal_liquid", mask_threshold = 0.1 })
-end
-
--- Terminal (foot / foot-float): 100% Sólido e Preto Simples (Sem HyprGlass / Sem Blur / Máxima Economia)
+-- Terminal (foot / foot-float): 100% Sólido e Preto Simples (Sem Blur / Máxima Economia)
 hl.window_rule({
     name     = "terminal-solid",
     match    = { class = "^(foot|foot-float)$" },
-    tag      = "+hyprglass_disabled",
     opacity  = "1.0 1.0",
     rounding = 10,
 })
 
--- File Manager (Thunar): Efeito Crystal Liquid Glass
+-- File Manager (Thunar): cantos arredondados (HyprGlass removido)
 hl.window_rule({
-    name     = "thunar-liquid-glass",
+    name     = "thunar-rounding",
     match    = { class = "^([tT]hunar)$" },
-    tag      = "+hyprglass_preset_crystal_liquid",
     rounding = 20,
-})
-
-hl.window_rule({
-    name  = "thunar-liquid-light",
-    match = { class = "^([tT]hunar)$" },
-    tag   = "+hyprglass_theme_light",
 })
 
 -- Browser (Firefox): Padrão normal / 100% Sólido (Sem vidro ou transparência)

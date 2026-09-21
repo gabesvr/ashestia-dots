@@ -19,6 +19,9 @@ Item {
     // Animated Target Position (Driven by Layout Manager)
     property real targetX: 1530
     property real targetY: 420
+    property real targetWidth: 340
+    property real targetHeight: 160
+    property real tallHeight: 420   // altura do modo lyrics (definida pelo layout)
 
     function setWallpaper(path) {
         glass.setWallpaper(path);
@@ -373,27 +376,25 @@ Item {
         y: musicWindow.targetY
 
         width: musicWindow.targetWidth > 0 ? musicWindow.targetWidth : 340
-        height: musicWindow.layoutMode === "tall" ? 420 : (musicWindow.layoutMode === "bar" ? 62 : (musicWindow.targetHeight > 0 ? musicWindow.targetHeight : 160))
+        height: musicWindow.layoutMode === "tall" ? musicWindow.tallHeight : (musicWindow.layoutMode === "bar" ? 62 : (musicWindow.targetHeight > 0 ? musicWindow.targetHeight : 160))
 
-        Behavior on x { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
-        Behavior on y { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
-        Behavior on width { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
-        Behavior on height { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
+        Behavior on x { NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
+        Behavior on y { NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
+        Behavior on width { NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
+        Behavior on height { NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
 
         // Liquid Glass Background
         LiquidGlass {
             id: glass
             anchors.fill: parent
             radius: musicWindow.layoutMode === "bar" ? (full.height / 2) : 40
-            roundness: 7.5
-            refractThickness: 35
-            refractIOR: 1.7
-            refractScale: 65
-            tint: "#ffffff"
-            tintAlpha: 0.10
-            chromaStrength: 0.30
-            specStrength: 0.70
-            blurRadius: 6
+            roundness: 4.6
+            tint: musicWindow.layoutMode === "tall" ? "#0a1024" : "#ffffff"
+            tintAlpha: musicWindow.layoutMode === "tall" ? 0.28 : 0.15
+            lumaCap: musicWindow.layoutMode === "tall" ? 0.50 : 0.80
+            Behavior on tint { ColorAnimation { duration: 320 } }
+            Behavior on tintAlpha { NumberAnimation { duration: 320 } }
+            Behavior on lumaCap { NumberAnimation { duration: 320 } }
             widgetX: full.x
             widgetY: full.y
             screenWidth: musicWindow.width > 0 ? musicWindow.width : 1920

@@ -100,10 +100,10 @@ Item {
         width: root.isExpanded ? 340 : root.targetWidth
         height: root.isExpanded ? 290 : root.targetHeight
 
-        Behavior on x { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
-        Behavior on y { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
-        Behavior on width { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
-        Behavior on height { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
+        Behavior on x { NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
+        Behavior on y { NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
+        Behavior on width { NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
+        Behavior on height { NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
 
         scale: (tileMouse.pressed && !root.isExpanded) ? 0.92 : ((tileMouse.containsMouse && !root.isExpanded) ? 1.04 : 1.0)
         Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
@@ -112,15 +112,13 @@ Item {
             id: glass
             anchors.fill: parent
             radius: root.isExpanded ? 28 : Math.min(24, Math.min(full.height, full.width) * 0.45)
-            roundness: 7.5
-            refractThickness: 35
-            refractIOR: 1.7
-            refractScale: 65
-            tint: "#ffffff"
-            tintAlpha: 0.10
-            chromaStrength: 0.30
-            specStrength: 0.70
-            blurRadius: 6
+            roundness: 4.6
+            tint: root.isExpanded ? "#0a1024" : "#ffffff"
+            tintAlpha: root.isExpanded ? 0.30 : 0.15
+            lumaCap: root.isExpanded ? 0.50 : 0.80
+            Behavior on tint { ColorAnimation { duration: 320 } }
+            Behavior on tintAlpha { NumberAnimation { duration: 320 } }
+            Behavior on lumaCap { NumberAnimation { duration: 320 } }
             widgetX: full.x
             widgetY: full.y
             screenWidth: root.width > 0 ? root.width : 1920
@@ -167,198 +165,128 @@ Item {
         }
 
         // ══════════════════════════════════════════════════════════════
-        // 2. EXPANDED MODE: INTERACTIVE BLUETOOTH DEVICE BROWSER
+        // 2. EXPANDED MODE: BLUETOOTH DEVICE BROWSER
         // ══════════════════════════════════════════════════════════════
         Item {
+            id: expPanel
             anchors.fill: parent
-            visible: root.isExpanded
-            anchors.margins: 14
+            anchors.margins: 16
+            visible: root.isExpanded || opacity > 0.01
+            opacity: root.isExpanded ? 1 : 0
+            Behavior on opacity { NumberAnimation { duration: 240 } }
             clip: true
 
-            // Header Row
-            Row {
+            PanelHeader {
                 id: expHeader
                 width: parent.width
-                height: 28
-                spacing: 10
-
-                Rectangle {
-                    width: 28; height: 28
-                    radius: 14
-                    color: Qt.rgba(1, 1, 1, 0.20)
-                    anchors.verticalCenter: parent.verticalCenter
-
-                    Image {
-                        anchors.centerIn: parent
-                        width: 14; height: 14
-                        source: "file:///home/gabriel/.config/quickshell/assets/icons/bluetooth.svg"
-                        fillMode: Image.PreserveAspectFit
-                    }
-                }
-
-                Text {
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: "Bluetooth"
-                    color: "#ffffff"
-                    font.family: sfProRounded.name
-                    font.pixelSize: 14
-                    font.weight: Font.Bold
-                }
-
-                Item { Layout.fillWidth: true; width: full.width - 230 }
-
-                // Bluetooth On/Off Pill Switch
-                Rectangle {
-                    width: 38; height: 20
-                    radius: 10
-                    anchors.verticalCenter: parent.verticalCenter
-                    color: root.isBtOn ? Qt.rgba(0.2, 0.8, 0.4, 0.55) : Qt.rgba(1, 1, 1, 0.16)
-                    border.width: 1
-                    border.color: Qt.rgba(1, 1, 1, 0.20)
-
-                    Rectangle {
-                        width: 16; height: 16
-                        radius: 8
-                        x: root.isBtOn ? 20 : 2
-                        anchors.verticalCenter: parent.verticalCenter
-                        color: "#ffffff"
-                        Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.toggleRequested()
-                    }
-                }
-
-                // Refresh Button
-                Rectangle {
-                    width: 22; height: 22
-                    radius: 11
-                    anchors.verticalCenter: parent.verticalCenter
-                    color: Qt.rgba(1, 1, 1, 0.14)
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: "↻"
-                        color: "#ffffff"
-                        font.pixelSize: 13
-                        opacity: root.isScanning ? 0.4 : 0.9
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.scanDevices()
-                    }
-                }
-
-                // Close / Collapse Button
-                Rectangle {
-                    width: 22; height: 22
-                    radius: 11
-                    anchors.verticalCenter: parent.verticalCenter
-                    color: Qt.rgba(1, 1, 1, 0.14)
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: "✕"
-                        color: "#ffffff"
-                        font.pixelSize: 10
-                        opacity: 0.85
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.isExpanded = false
-                    }
-                }
+                iconSource: "file:///home/gabriel/.config/quickshell/assets/icons/bluetooth.svg"
+                title: "Bluetooth"
+                subtitle: root.statusMessage !== "" ? root.statusMessage
+                        : (!root.isBtOn ? "Off"
+                        : (root.isScanning ? "Scanning…"
+                        : (root.btDevice !== "" ? root.btDevice : "Not connected")))
+                showSwitch: true
+                switchOn: root.isBtOn
+                busy: root.isScanning
+                onSwitchToggled: root.toggleRequested()
+                onRefreshClicked: root.scanDevices()
+                onCloseClicked: root.isExpanded = false
             }
 
-            // Status message
-            Text {
-                id: statusLabel
+            Rectangle {
+                id: expDivider
                 anchors.top: expHeader.bottom
-                anchors.topMargin: 4
-                anchors.left: parent.left
-                text: root.statusMessage
-                color: Qt.rgba(1, 1, 1, 0.65)
-                font.family: sfRegular.name
-                font.pixelSize: 10
-                visible: root.statusMessage !== ""
+                anchors.topMargin: 8
+                width: parent.width
+                height: 1
+                color: Qt.rgba(1, 1, 1, 0.14)
             }
 
-            // Device List
             ListView {
                 id: devListView
-                anchors.top: statusLabel.visible ? statusLabel.bottom : expHeader.bottom
+                anchors.top: expDivider.bottom
                 anchors.topMargin: 8
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom
                 clip: true
-                spacing: 4
+                spacing: 5
+                boundsBehavior: Flickable.StopAtBounds
                 model: root.deviceList
 
                 delegate: Rectangle {
                     width: devListView.width
-                    height: 38
-                    radius: 10
-                    color: modelData.connected ? Qt.rgba(1, 1, 1, 0.18) : (devRowMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.12) : Qt.rgba(1, 1, 1, 0.05))
-                    border.width: modelData.connected ? 1 : 0
-                    border.color: Qt.rgba(1, 1, 1, 0.25)
+                    height: 46
+                    radius: 13
+                    color: modelData.connected ? Qt.rgba(1, 1, 1, 0.20) : (devRowMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.14) : Qt.rgba(1, 1, 1, 0.08))
+                    border.width: 1
+                    border.color: modelData.connected ? Qt.rgba(1, 1, 1, 0.30) : Qt.rgba(1, 1, 1, 0.06)
+                    Behavior on color { ColorAnimation { duration: 120 } }
 
-                    Row {
-                        anchors.fill: parent
-                        anchors.margins: 8
-                        spacing: 10
+                    Rectangle {
+                        id: devBadge
+                        width: 28; height: 28
+                        radius: 14
+                        anchors.left: parent.left
+                        anchors.leftMargin: 10
+                        anchors.verticalCenter: parent.verticalCenter
+                        color: modelData.connected ? "#0a84ff" : Qt.rgba(1, 1, 1, 0.16)
 
                         Image {
-                            width: 16; height: 16
+                            anchors.centerIn: parent
+                            width: 14; height: 14
                             source: "file:///home/gabriel/.config/quickshell/assets/icons/bluetooth.svg"
+                            sourceSize.width: 32; sourceSize.height: 32
                             fillMode: Image.PreserveAspectFit
-                            anchors.verticalCenter: parent.verticalCenter
-                            opacity: modelData.connected ? 1.0 : 0.65
+                            opacity: modelData.connected ? 1.0 : 0.85
                         }
+                    }
 
-                        Column {
-                            anchors.verticalCenter: parent.verticalCenter
-                            spacing: 1
+                    Column {
+                        anchors.left: devBadge.right
+                        anchors.leftMargin: 10
+                        anchors.right: actionPill.left
+                        anchors.rightMargin: 8
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 1
 
-                            Text {
-                                text: modelData.name || modelData.mac
-                                color: "#ffffff"
-                                font.family: sfRegular.name
-                                font.pixelSize: 12
-                                font.weight: modelData.connected ? Font.Bold : Font.Normal
-                                elide: Text.ElideRight
-                                width: full.width - 150
-                            }
-
-                            Text {
-                                text: modelData.connected ? "Connected" : (modelData.paired ? "Paired" : "Available")
-                                color: modelData.connected ? "#34d399" : Qt.rgba(1, 1, 1, 0.50)
-                                font.family: sfRegular.name
-                                font.pixelSize: 9
-                            }
+                        Text {
+                            width: parent.width
+                            text: modelData.name || modelData.mac
+                            color: "#ffffff"
+                            font.family: sfRegular.name
+                            font.pixelSize: 13
+                            font.weight: modelData.connected ? Font.Bold : Font.Medium
+                            elide: Text.ElideRight
+                            style: Text.Raised
+                            styleColor: Qt.rgba(0, 0, 0, 0.32)
                         }
+                        Text {
+                            text: modelData.connected ? "Connected" : (modelData.paired ? "Paired" : "Available")
+                            color: modelData.connected ? "#34d399" : Qt.rgba(1, 1, 1, 0.72)
+                            font.family: sfRegular.name
+                            font.pixelSize: 10
+                        }
+                    }
 
-                        Item { Layout.fillWidth: true }
+                    Rectangle {
+                        id: actionPill
+                        anchors.right: parent.right
+                        anchors.rightMargin: 10
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: pillText.implicitWidth + 20
+                        height: 24
+                        radius: 12
+                        color: modelData.connected ? Qt.rgba(1, 0.27, 0.23, 0.55) : Qt.rgba(1, 1, 1, 0.20)
 
-                        Rectangle {
-                            width: 24; height: 24
-                            radius: 12
-                            color: Qt.rgba(1, 1, 1, 0.12)
-                            anchors.verticalCenter: parent.verticalCenter
-
-                            Text {
-                                anchors.centerIn: parent
-                                text: modelData.connected ? "✕" : "→"
-                                color: "#ffffff"
-                                font.pixelSize: 10
-                            }
+                        Text {
+                            id: pillText
+                            anchors.centerIn: parent
+                            text: modelData.connected ? "Disconnect" : "Connect"
+                            color: "#ffffff"
+                            font.family: sfRegular.name
+                            font.pixelSize: 10
+                            font.weight: Font.Bold
                         }
                     }
 
@@ -370,6 +298,15 @@ Item {
                         onClicked: root.toggleDevice(modelData.mac, modelData.connected)
                     }
                 }
+            }
+
+            Text {
+                anchors.centerIn: devListView
+                visible: root.deviceList.length === 0
+                text: !root.isBtOn ? "Bluetooth is off" : (root.isScanning ? "Looking for devices…" : "No devices found")
+                color: Qt.rgba(1, 1, 1, 0.70)
+                font.family: sfRegular.name
+                font.pixelSize: 12
             }
         }
 

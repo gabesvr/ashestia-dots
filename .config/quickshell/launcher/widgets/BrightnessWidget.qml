@@ -43,10 +43,10 @@ Item {
         width: root.targetWidth
         height: root.targetHeight
 
-        Behavior on x { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
-        Behavior on y { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
-        Behavior on width { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
-        Behavior on height { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
+        Behavior on x { NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
+        Behavior on y { NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
+        Behavior on width { NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
+        Behavior on height { NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
 
         scale: cardMouse.pressed ? 0.96 : (cardMouse.containsMouse ? 1.02 : 1.0)
         Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
@@ -55,15 +55,7 @@ Item {
             id: glass
             anchors.fill: parent
             radius: Math.min(28, Math.min(full.height, full.width) * 0.40)
-            roundness: 7.5
-            refractThickness: 35
-            refractIOR: 1.7
-            refractScale: 65
-            tint: "#ffffff"
-            tintAlpha: 0.10
-            chromaStrength: 0.30
-            specStrength: 0.70
-            blurRadius: 6
+            roundness: 4.6
             widgetX: full.x
             widgetY: full.y
             screenWidth: root.width > 0 ? root.width : 1920

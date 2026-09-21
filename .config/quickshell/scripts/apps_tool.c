@@ -311,8 +311,18 @@ static void list_apps(void) {
     puts("]");
 }
 
+static void clean_launch_env(void) {
+    unsetenv("LD_PRELOAD");
+    unsetenv("MALLOC_CONF");
+    unsetenv("MALLOC_ARENA_MAX");
+    unsetenv("MALLOC_TRIM_THRESHOLD_");
+    unsetenv("MALLOC_MMAP_THRESHOLD_");
+}
+
 static void launch_app(const char* identifier, const char* fallback_exec) {
     if (!identifier || !*identifier) return;
+
+    clean_launch_env();
 
     char desktop_file[256] = "";
     char clean_name[256] = "";
@@ -342,15 +352,32 @@ static void launch_app(const char* identifier, const char* fallback_exec) {
             desktop_file, clean_name, desktop_file, clean_name);
     }
 
-    // Try hyprctl dispatch hl.dsp.exec_cmd first
-    char hypr_cmd[2048];
-    snprintf(hypr_cmd, sizeof(hypr_cmd), "hyprctl dispatch 'hl.dsp.exec_cmd(\"%s\")' >/dev/null 2>&1", launch_cmd);
-    if (system(hypr_cmd) == 0) {
-        printf("{\"status\":\"ok\",\"launched\":\"%s\",\"method\":\"hyprctl\"}\n", identifier);
-        return;
+    // Try hyprctl dispatch hl.dsp.exec_cmd with Lua raw string [=[...]=]
+    // Using fork/waitpid directly instead of system() avoids shell quote escaping pitfalls
+    char lua_cmd[2048];
+    snprintf(lua_cmd, sizeof(lua_cmd), "hl.dsp.exec_cmd([=[%s]=])", launch_cmd);
+    pid_t hpid = fork();
+    if (hpid == 0) {
+        int devnull = open("/dev/null", O_WRONLY);
+        if (devnull >= 0) {
+            dup2(devnull, STDOUT_FILENO);
+            dup2(devnull, STDERR_FILENO);
+            close(devnull);
+        }
+        execlp("hyprctl", "hyprctl", "dispatch", lua_cmd, (char*)NULL);
+        _exit(1);
+    }
+    if (hpid > 0) {
+        int status = 0;
+        waitpid(hpid, &status, 0);
+        if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
+            printf("{\"status\":\"ok\",\"launched\":\"%s\",\"method\":\"hyprctl\"}\n", identifier);
+            return;
+        }
     }
 
     // Completely detached double-fork fallback with /dev/null redirection
+    // and systemd-run to decouple from quickshell.service cgroup
     int null_fd = open("/dev/null", O_RDWR);
     pid_t pid = fork();
     if (pid == 0) {
@@ -363,6 +390,8 @@ static void launch_app(const char* identifier, const char* fallback_exec) {
             close(null_fd);
         }
         for (int fd = 3; fd < 256; fd++) close(fd);
+        clean_launch_env();
+        execlp("systemd-run", "systemd-run", "--user", "--slice=app.slice", "/bin/sh", "-c", launch_cmd, (char*)NULL);
         execl("/bin/sh", "sh", "-c", launch_cmd, (char*)NULL);
         _exit(1);
     }

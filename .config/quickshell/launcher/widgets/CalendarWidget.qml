@@ -122,24 +122,16 @@ Item {
         width: calendarWindow.targetWidth
         height: 195
 
-        Behavior on x { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
-        Behavior on y { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
-        Behavior on width { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
+        Behavior on x { NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
+        Behavior on y { NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
+        Behavior on width { NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
 
         // Liquid Glass Background
         LiquidGlass {
             id: glass
             anchors.fill: parent
             radius: 40
-            roundness: 7.5
-            refractThickness: 35
-            refractIOR: 1.7
-            refractScale: 65
-            tint: "#ffffff"
-            tintAlpha: 0.10
-            chromaStrength: 0.30
-            specStrength: 0.70
-            blurRadius: 6
+            roundness: 4.6
             widgetX: full.x
             widgetY: full.y
             screenWidth: calendarWindow.width > 0 ? calendarWindow.width : 1920

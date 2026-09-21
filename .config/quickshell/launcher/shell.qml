@@ -214,6 +214,10 @@ ShellRoot {
                     wBt.isExpanded = !wBt.isExpanded;
                 } else if (cmd === "dnd" || cmd === "dnd:toggle" || cmd === "mode:dnd") {
                     shellRoot.toggleDnd();
+                } else if (cmd === "theme" || cmd === "solid" || cmd === "theme:toggle") {
+                    GlassTheme.toggle();
+                } else if (cmd === "wallpaper:panel" || cmd === "wallpaper:dialog") {
+                    wWallpaper.isExpanded = !wWallpaper.isExpanded;
                 } else if (cmd === "wallpaper" || cmd === "view:wallpaper" || cmd === "wallpapers") {
                     shellRoot.nextWallpaper();
                 } else if (cmd === "turbo" || cmd === "turbo:toggle") {
@@ -227,316 +231,260 @@ ShellRoot {
         }
     }
 
-    // ── 5 Creative Desktop Layouts (Smooth iOS Spring Animation) ──
+    // ── 5 Desktop Layouts (adaptativos, sem sobreposição, mola + escalonamento) ──
     property int currentLayout: 1
+    property bool layoutReady: false
 
-    readonly property var layouts: [
-        // ── Layout 1: Sonoma Flanks ──────────────────────────────
-        // Left flank: Clock, Calendar, Vertical Volume, Vertical Brightness, Apps
-        // Right flank: Weather, Music, 6 Icon-only Tiles (Wi-Fi, BT, Turbo, DND, XWayland, Wallpaper)
-        {
-            id: 1,
-            name: "Sonoma Flanks",
-            desc: "Equilíbrio Lateral",
-            clock:     { x: 50,   y: 50,  width: 240, height: 140 },
-            calendar:  { x: 50,   y: 206, width: 240, height: 195 },
-            vol:       { x: 50,   y: 417, width: 114, height: 160 },
-            br:        { x: 176,  y: 417, width: 114, height: 160 },
-            apps:      { x: 50,   y: 591, width: 240, height: 68 },
-            weather:   { x: 1530, y: 50,  width: 340, height: 340 },
-            music:     { x: 1530, y: 410, width: 340, height: 160 },
-            wifi:      { x: 1530, y: 586, width: 76,  height: 76 },
-            bt:        { x: 1618, y: 586, width: 76,  height: 76 },
-            turbo:     { x: 1706, y: 586, width: 76,  height: 76 },
-            dnd:       { x: 1794, y: 586, width: 76,  height: 76 },
-            xwayland:  { x: 1530, y: 674, width: 76,  height: 76 },
-            wallpaper: { x: 1618, y: 674, width: 76,  height: 76 }
-        },
-        // ── Layout 2: Executive Shelf ────────────────────────────
-        // Comprehensive top shelf distribution across the whole monitor
-        {
-            id: 2,
-            name: "Executive Shelf",
-            desc: "Prateleira Superior",
-            clock:     { x: 50,   y: 50,  width: 240, height: 140 },
-            calendar:  { x: 304,  y: 50,  width: 240, height: 195 },
-            vol:       { x: 558,  y: 50,  width: 180, height: 68 },
-            br:        { x: 558,  y: 128, width: 180, height: 68 },
-            wifi:      { x: 752,  y: 50,  width: 68,  height: 68 },
-            bt:        { x: 828,  y: 50,  width: 68,  height: 68 },
-            apps:      { x: 904,  y: 50,  width: 140, height: 68 },
-            turbo:     { x: 752,  y: 128, width: 68,  height: 68 },
-            dnd:       { x: 828,  y: 128, width: 68,  height: 68 },
-            xwayland:  { x: 904,  y: 128, width: 68,  height: 68 },
-            wallpaper: { x: 976,  y: 128, width: 68,  height: 68 },
-            weather:   { x: 1192, y: 50,  width: 260, height: 340 },
-            music:     { x: 1466, y: 50,  width: 404, height: 160 }
-        },
-        // ── Layout 3: Smart Sidebar ──────────────────────────────
-        // Dual column dock on the right side
-        {
-            id: 3,
-            name: "Smart Sidebar",
-            desc: "Painel Direito",
-            clock:     { x: 1270, y: 50,  width: 240, height: 140 },
-            calendar:  { x: 1270, y: 204, width: 240, height: 195 },
-            vol:       { x: 1270, y: 413, width: 114, height: 150 },
-            br:        { x: 1396, y: 413, width: 114, height: 150 },
-            apps:      { x: 1270, y: 577, width: 240, height: 72 },
-            turbo:     { x: 1270, y: 663, width: 54,  height: 54 },
-            dnd:       { x: 1332, y: 663, width: 54,  height: 54 },
-            xwayland:  { x: 1394, y: 663, width: 54,  height: 54 },
-            wallpaper: { x: 1456, y: 663, width: 54,  height: 54 },
-            weather:   { x: 1530, y: 50,  width: 340, height: 340 },
-            music:     { x: 1530, y: 410, width: 340, height: 160 },
-            wifi:      { x: 1530, y: 586, width: 76,  height: 76 },
-            bt:        { x: 1618, y: 586, width: 76,  height: 76 }
-        },
-        // ── Layout 4: Four Corners + Center Console ──────────────
-        // Floating corners + bottom-center flight instrument console
-        {
-            id: 4,
-            name: "Four Corners",
-            desc: "Quatro Cantos HUD",
-            clock:     { x: 50,   y: 50,  width: 240, height: 140 },
-            weather:   { x: 1530, y: 50,  width: 340, height: 340 },
-            calendar:  { x: 50,   y: 730, width: 240, height: 195 },
-            apps:      { x: 50,   y: 940, width: 240, height: 72 },
-            music:     { x: 1530, y: 750, width: 340, height: 160 },
-            vol:       { x: 1530, y: 924, width: 162, height: 88 },
-            br:        { x: 1708, y: 924, width: 162, height: 88 },
-            wifi:      { x: 730,  y: 940, width: 72,  height: 72 },
-            bt:        { x: 810,  y: 940, width: 72,  height: 72 },
-            turbo:     { x: 890,  y: 940, width: 72,  height: 72 },
-            dnd:       { x: 970,  y: 940, width: 72,  height: 72 },
-            xwayland:  { x: 1050, y: 940, width: 72,  height: 72 },
-            wallpaper: { x: 1130, y: 940, width: 72,  height: 72 }
-        },
-        // ── Layout 5: Creative Studio ────────────────────────────
-        // Left rail: Clock, Calendar, Weather, Apps
-        // Right stage: Music, Volume, Brightness, 6 Tiles
-        {
-            id: 5,
-            name: "Creative Studio",
-            desc: "Trilho Esquerdo + Palco",
-            clock:     { x: 50,   y: 50,  width: 240, height: 140 },
-            calendar:  { x: 50,   y: 204, width: 240, height: 195 },
-            weather:   { x: 50,   y: 413, width: 240, height: 340 },
-            apps:      { x: 50,   y: 767, width: 240, height: 72 },
-            music:     { x: 1530, y: 50,  width: 340, height: 160 },
-            vol:       { x: 1530, y: 224, width: 340, height: 68 },
-            br:        { x: 1530, y: 306, width: 340, height: 68 },
-            wifi:      { x: 1530, y: 388, width: 76,  height: 76 },
-            bt:        { x: 1618, y: 388, width: 76,  height: 76 },
-            turbo:     { x: 1706, y: 388, width: 76,  height: 76 },
-            dnd:       { x: 1794, y: 388, width: 76,  height: 76 },
-            xwayland:  { x: 1530, y: 476, width: 76,  height: 76 },
-            wallpaper: { x: 1618, y: 476, width: 76,  height: 76 }
+    readonly property var tileKeys: ["wifi", "bt", "turbo", "dnd", "xwayland", "wallpaper", "theme"]
+
+    function computeLayouts(W, H) {
+        if (!W || W <= 0) W = 1920;
+        if (!H || H <= 0) H = 1200;
+
+        const m = Math.round(Math.max(24, Math.min(50, W * 0.025)));  // margem da tela
+        const g = 14;                                                  // espaço entre cards
+        const R = W - m - 340;                                         // x da coluna direita (340px)
+        const bottom = H - m;
+
+        function box(x, y, w, h) { return { x: x, y: y, width: w, height: h }; }
+        function grid(x, y, cols, size, gap) { return { x: x, y: y, cols: cols, size: size, gap: gap }; }
+
+        // Duas colunas de painéis (usado nos layouts 1 e 3): coluna A (240px) + coluna B (340px, à direita)
+        function flanks(id, name, desc, ax) {
+            const clockY = m, calY = m + 140 + g, volY = calY + 195 + g, appsY = volY + 160 + g;
+            const musicY = m + 340 + g, tilesY = musicY + 160 + g;
+            return {
+                id: id, name: name, desc: desc, m: m, g: g,
+                pos: {
+                    clock:    box(ax, clockY, 240, 140),
+                    calendar: box(ax, calY, 240, 195),
+                    vol:      box(ax, volY, 113, 160),
+                    br:       box(ax + 127, volY, 113, 160),
+                    apps:     box(ax, appsY, 240, 68),
+                    weather:  box(R, m, 340, 340),
+                    music:    box(R, musicY, 340, 160)
+                },
+                tiles:  grid(R, tilesY, 4, 76, 12),
+                alt:    grid(ax, appsY + 68 + g, 3, 72, 12),   // tiles migram p/ baixo do Apps quando algo expande
+                expand: { x: R, y: tilesY },
+                lyrics: { music: { x: R, y: musicY, height: 420 }, tiles: "alt" }
+            };
         }
-    ]
+
+        // Layout 2: prateleira no topo, deixa toda a metade de baixo livre para janelas
+        const shelfVolX = m + 254 + 240 + g;
+        const shelfTilesX = shelfVolX + 172 + g;
+        const shelfMusicX = Math.min(shelfTilesX, R - g - 340);
+        const shelfMusicY = m + 76 * 2 + 12 + g;
+
+        // Layout 4: quatro cantos + console central
+        const rowY = bottom - 72;
+        const volY4 = bottom - 88;
+        const music4Y = volY4 - g - 160;
+        const lyr4H = Math.min(420, volY4 - g - (m + 340 + g));
+
+        // Layout 5: trilho esquerdo + palco direito
+        const cal5 = m + 140 + g, wea5 = cal5 + 195 + g;
+        const vol5 = m + 160 + g, br5 = vol5 + 68 + g, tiles5 = br5 + 68 + g;
+
+        return [
+            flanks(1, "Sonoma Flanks", "Equilíbrio Lateral", m),
+
+            {
+                id: 2, name: "Top Shelf", desc: "Prateleira Superior", m: m, g: g,
+                pos: {
+                    clock:    box(m, m, 240, 140),
+                    apps:     box(m, m + 140 + g, 240, 68),
+                    calendar: box(m + 254, m, 240, 195),
+                    vol:      box(shelfVolX, m, 172, 68),
+                    br:       box(shelfVolX, m + 82, 172, 68),
+                    music:    box(shelfMusicX, shelfMusicY, 340, 160),
+                    weather:  box(R, m, 340, 340)
+                },
+                tiles:  grid(shelfTilesX, m, 4, 76, 12),
+                alt:    grid(m, m + 140 + g + 68 + g, 3, 72, 12),
+                expand: { x: shelfTilesX, y: m },
+                expandOver: { music: { y: m + 290 + g } },
+                lyrics: { music: { x: shelfMusicX, y: shelfMusicY, height: 420 }, tiles: "keep" }
+            },
+
+            flanks(3, "Smart Sidebar", "Painel Direito", R - 240 - g),
+
+            {
+                id: 4, name: "Four Corners", desc: "Quatro Cantos HUD", m: m, g: g,
+                pos: {
+                    clock:    box(m, m, 240, 140),
+                    weather:  box(R, m, 340, 340),
+                    calendar: box(m, rowY - g - 195, 240, 195),
+                    apps:     box(m, rowY, 240, 72),
+                    music:    box(R, music4Y, 340, 160),
+                    vol:      box(R, volY4, 162, 88),
+                    br:       box(R + 178, volY4, 162, 88)
+                },
+                tiles:  grid(Math.round((W - 552) / 2), rowY, 7, 72, 8),
+                alt:    "keep",
+                expand: { x: Math.round((W - 340) / 2), y: rowY - g - 290 },
+                lyrics: { music: { x: R, y: volY4 - g - lyr4H, height: lyr4H }, tiles: "keep" }
+            },
+
+            {
+                id: 5, name: "Creative Studio", desc: "Trilho Esquerdo + Palco", m: m, g: g,
+                pos: {
+                    clock:    box(m, m, 240, 140),
+                    calendar: box(m, cal5, 240, 195),
+                    weather:  box(m, wea5, 240, 340),
+                    apps:     box(m, wea5 + 340 + g, 240, 68),
+                    music:    box(R, m, 340, 160),
+                    vol:      box(R, vol5, 340, 68),
+                    br:       box(R, br5, 340, 68)
+                },
+                tiles:  grid(R, tiles5, 4, 76, 12),
+                alt:    "below",
+                expand: { x: R, y: tiles5 },
+                lyrics: { music: { x: R, y: m, height: 420 }, tiles: "shift", dy: 260, shift: ["vol", "br"] }
+            }
+        ];
+    }
+
+    Timer {
+        id: relayoutTimer
+        interval: 150
+        repeat: false
+        onTriggered: shellRoot.applyLayout(shellRoot.currentLayout)
+    }
+
+    readonly property var layouts: computeLayouts(desktopWindow.width, desktopWindow.height)
+
+    function collapseAllExpanded() {
+        if (wWallpaper.isExpanded) wWallpaper.isExpanded = false;
+        if (wWifi.isExpanded) wWifi.isExpanded = false;
+        if (wBt.isExpanded) wBt.isExpanded = false;
+        if (desktopMusic.isLyricsOpen) desktopMusic.layoutMode = "wide";
+    }
+
+    // Distribui os 6 tiles numa grade
+    function placeTiles(t, gr, keys) {
+        for (let i = 0; i < keys.length; i++) {
+            const c = i % gr.cols, r = Math.floor(i / gr.cols);
+            t[keys[i]] = { x: gr.x + c * (gr.size + gr.gap), y: gr.y + r * (gr.size + gr.gap), width: gr.size, height: gr.size };
+        }
+    }
+
+    // Resolve a posição final de cada widget levando em conta lyrics / painel expandido
+    function computeTargets(l, H) {
+        const t = {};
+        for (const k in l.pos) t[k] = Object.assign({}, l.pos[k]);
+
+        const expKey = wWifi.isExpanded ? "wifi" : (wBt.isExpanded ? "bt" : (wWallpaper.isExpanded ? "wallpaper" : ""));
+        let gr = l.tiles;
+        let keys = tileKeys.slice();
+
+        if (expKey !== "") {
+            const ey = Math.min(l.expand.y, H - l.m - 290);
+            if (l.alt === "below") gr = { x: gr.x, y: ey + 290 + l.g, cols: gr.cols, size: gr.size, gap: gr.gap };
+            else if (l.alt !== "keep") gr = l.alt;
+            if (l.alt !== "keep") keys = keys.filter(k => k !== expKey);
+            placeTiles(t, gr, keys);
+            t[expKey] = { x: l.expand.x, y: ey, width: 340, height: 290 };
+            if (l.expandOver && l.expandOver.music) Object.assign(t.music, l.expandOver.music);
+        } else if (desktopMusic.isLyricsOpen) {
+            Object.assign(t.music, l.lyrics.music);
+            if (l.lyrics.tiles === "alt") gr = l.alt;
+            else if (l.lyrics.tiles === "shift") {
+                gr = { x: gr.x, y: gr.y + l.lyrics.dy, cols: gr.cols, size: gr.size, gap: gr.gap };
+                for (const k of l.lyrics.shift) t[k].y += l.lyrics.dy;
+            }
+            placeTiles(t, gr, keys);
+        } else {
+            placeTiles(t, gr, keys);
+        }
+        return t;
+    }
+
+    readonly property var widgetMap: ({
+        clock: desktopClock, calendar: desktopCalendar, weather: desktopWeather, music: desktopMusic,
+        vol: wVol, br: wBr, apps: wApps, wifi: wWifi, bt: wBt, turbo: wTurbo,
+        dnd: wDnd, xwayland: wXwayland, wallpaper: wWallpaper, theme: wTheme
+    })
+
+    property var staggerQueue: []
+
+    function applyOne(w, p) {
+        w.targetX = p.x;
+        w.targetY = p.y;
+        if (p.width !== undefined && w.targetWidth !== undefined) w.targetWidth = p.width;
+        if (p.height !== undefined && w.targetHeight !== undefined) w.targetHeight = p.height;
+    }
+
+    Timer {
+        id: staggerTimer
+        interval: 34
+        repeat: true
+        onTriggered: {
+            const q = shellRoot.staggerQueue;
+            if (q.length === 0) { stop(); return; }
+            const it = q.shift();
+            shellRoot.applyOne(it.w, it.p);
+        }
+    }
+
+    // Aplica os alvos; ao trocar de layout os widgets chegam em "onda" (canto sup. esq. → inf. dir.)
+    function applyTargets(t, stagger) {
+        staggerTimer.stop();
+        staggerQueue = [];
+
+        desktopMusic.tallHeight = (t.music && t.music.height && desktopMusic.isLyricsOpen) ? t.music.height : 420;
+
+        const items = [];
+        for (const k in t) {
+            const w = widgetMap[k];
+            if (!w) continue;
+            const p = t[k];
+            const changed = w.targetX !== p.x || w.targetY !== p.y
+                || (p.width !== undefined && w.targetWidth !== undefined && w.targetWidth !== p.width)
+                || (p.height !== undefined && w.targetHeight !== undefined && w.targetHeight !== p.height);
+            if (changed) items.push({ w: w, p: p, order: p.x + p.y * 0.8 });
+        }
+        if (!stagger) {
+            for (const it of items) applyOne(it.w, it.p);
+            return;
+        }
+        items.sort((a, b) => a.order - b.order);
+        staggerQueue = items;
+        staggerTimer.start();
+    }
 
     function applyLayout(idx) {
-        if (idx < 1 || idx > layouts.length) idx = 1;
+        const W = desktopWindow.width > 0 ? desktopWindow.width : 1920;
+        const H = desktopWindow.height > 0 ? desktopWindow.height : 1200;
+        const lList = computeLayouts(W, H);
+        if (idx < 1 || idx > lList.length) idx = 1;
+
+        const switched = layoutReady && idx !== currentLayout;
         currentLayout = idx;
-        const l = layouts[idx - 1];
+        if (switched) collapseAllExpanded();
 
-        // Core widgets
-        desktopClock.targetX = l.clock.x;
-        desktopClock.targetY = l.clock.y;
-
-        desktopCalendar.targetX = l.calendar.x;
-        desktopCalendar.targetY = l.calendar.y;
-        desktopCalendar.targetWidth = (l.calendar && l.calendar.width) ? l.calendar.width : 240;
-
-        desktopWeather.targetX = l.weather.x;
-        desktopWeather.targetY = l.weather.y;
-        desktopWeather.targetWidth = (l.weather && l.weather.width) ? l.weather.width : 250;
-
-        desktopMusic.targetX = l.music.x;
-        desktopMusic.targetY = l.music.y;
-
-        // Modular Control Widgets
-        if (l.vol) {
-            wVol.targetX = l.vol.x;
-            wVol.targetY = l.vol.y;
-            wVol.targetWidth = l.vol.width ? l.vol.width : 114;
-            wVol.targetHeight = l.vol.height ? l.vol.height : 160;
-        }
-
-        if (l.br) {
-            wBr.targetX = l.br.x;
-            wBr.targetY = l.br.y;
-            wBr.targetWidth = l.br.width ? l.br.width : 114;
-            wBr.targetHeight = l.br.height ? l.br.height : 160;
-        }
-
-        if (l.wifi) {
-            wWifi.targetX = l.wifi.x;
-            wWifi.targetY = l.wifi.y;
-            wWifi.targetWidth = l.wifi.width ? l.wifi.width : 162;
-            wWifi.targetHeight = l.wifi.height ? l.wifi.height : 88;
-        }
-
-        if (l.bt) {
-            wBt.targetX = l.bt.x;
-            wBt.targetY = l.bt.y;
-            wBt.targetWidth = l.bt.width ? l.bt.width : 162;
-            wBt.targetHeight = l.bt.height ? l.bt.height : 88;
-        }
-
-        if (l.turbo) {
-            wTurbo.targetX = l.turbo.x;
-            wTurbo.targetY = l.turbo.y;
-            wTurbo.targetWidth = l.turbo.width ? l.turbo.width : 76;
-            wTurbo.targetHeight = l.turbo.height ? l.turbo.height : 76;
-        }
-
-        if (l.dnd) {
-            wDnd.targetX = l.dnd.x;
-            wDnd.targetY = l.dnd.y;
-            wDnd.targetWidth = l.dnd.width ? l.dnd.width : 76;
-            wDnd.targetHeight = l.dnd.height ? l.dnd.height : 76;
-        }
-
-        if (l.xwayland) {
-            wXwayland.targetX = l.xwayland.x;
-            wXwayland.targetY = l.xwayland.y;
-            wXwayland.targetWidth = l.xwayland.width ? l.xwayland.width : 76;
-            wXwayland.targetHeight = l.xwayland.height ? l.xwayland.height : 76;
-        }
-
-        if (l.wallpaper) {
-            wWallpaper.targetX = l.wallpaper.x;
-            wWallpaper.targetY = l.wallpaper.y;
-            wWallpaper.targetWidth = l.wallpaper.width ? l.wallpaper.width : 76;
-            wWallpaper.targetHeight = l.wallpaper.height ? l.wallpaper.height : 76;
-        }
-
-        if (l.apps) {
-            wApps.targetX = l.apps.x;
-            wApps.targetY = l.apps.y;
-            wApps.targetWidth = l.apps.width ? l.apps.width : 240;
-            wApps.targetHeight = l.apps.height ? l.apps.height : 68;
-        }
-
-        // ── Dynamic Adaptive Collision Avoidance for Lyrics, Wi-Fi & BT Expansion ──
-        const isLyrics = desktopMusic.isLyricsOpen;
-        const isWifiExp = wWifi.isExpanded;
-        const isBtExp = wBt.isExpanded;
-
-        if (isLyrics) {
-            if (idx === 1) {
-                wWifi.targetY = 844;
-                wBt.targetY = 844;
-                wTurbo.targetY = 844;
-                wDnd.targetY = 844;
-                wXwayland.targetY = 932;
-                wWallpaper.targetY = 932;
-            } else if (idx === 3) {
-                wWifi.targetY = 844;
-                wBt.targetY = 844;
-            } else if (idx === 4) {
-                desktopMusic.targetY = 490;
-            } else if (idx === 5) {
-                wVol.targetY = 484;
-                wBr.targetY = 562;
-                wWifi.targetY = 642;
-                wBt.targetY = 642;
-                wTurbo.targetY = 642;
-                wDnd.targetY = 642;
-                wXwayland.targetY = 730;
-                wWallpaper.targetY = 730;
-            }
-        }
-
-        if (isWifiExp) {
-            if (idx === 1 || idx === 3) {
-                let sy = 586;
-                wWifi.targetX = 1530;
-                wWifi.targetY = sy;
-                let ny = sy + 300;
-                wBt.targetX = 1530;
-                wBt.targetY = ny;
-                wTurbo.targetX = 1618;
-                wTurbo.targetY = ny;
-                wDnd.targetX = 1706;
-                wDnd.targetY = ny;
-                wXwayland.targetX = 1530;
-                wXwayland.targetY = ny + 86;
-                wWallpaper.targetX = 1618;
-                wWallpaper.targetY = ny + 86;
-            } else if (idx === 4) {
-                wWifi.targetX = 730;
-                wWifi.targetY = 636;
-            } else if (idx === 5) {
-                let sy = 388;
-                wWifi.targetX = 1530;
-                wWifi.targetY = sy;
-                let ny = sy + 300;
-                wBt.targetX = 1530;
-                wBt.targetY = ny;
-                wTurbo.targetX = 1618;
-                wTurbo.targetY = ny;
-                wDnd.targetX = 1706;
-                wDnd.targetY = ny;
-                wXwayland.targetX = 1530;
-                wXwayland.targetY = ny + 86;
-                wWallpaper.targetX = 1618;
-                wWallpaper.targetY = ny + 86;
-            }
-        } else if (isBtExp) {
-            if (idx === 1 || idx === 3) {
-                let sy = 586;
-                wBt.targetX = 1530;
-                wBt.targetY = sy;
-                let ny = sy + 300;
-                wWifi.targetX = 1530;
-                wWifi.targetY = ny;
-                wTurbo.targetX = 1618;
-                wTurbo.targetY = ny;
-                wDnd.targetX = 1706;
-                wDnd.targetY = ny;
-                wXwayland.targetX = 1530;
-                wXwayland.targetY = ny + 86;
-                wWallpaper.targetX = 1618;
-                wWallpaper.targetY = ny + 86;
-            } else if (idx === 4) {
-                wBt.targetX = 730;
-                wBt.targetY = 636;
-            } else if (idx === 5) {
-                let sy = 388;
-                wBt.targetX = 1530;
-                wBt.targetY = sy;
-                let ny = sy + 300;
-                wWifi.targetX = 1530;
-                wWifi.targetY = ny;
-                wTurbo.targetX = 1618;
-                wTurbo.targetY = ny;
-                wDnd.targetX = 1706;
-                wDnd.targetY = ny;
-                wXwayland.targetX = 1530;
-                wXwayland.targetY = ny + 86;
-                wWallpaper.targetX = 1618;
-                wWallpaper.targetY = ny + 86;
-            }
-        }
-
+        applyTargets(computeTargets(lList[idx - 1], H), switched);
+        layoutReady = true;
         saveLayoutState(idx);
     }
 
     function nextLayout() {
+        collapseAllExpanded();
         var next = currentLayout + 1;
         if (next > layouts.length) next = 1;
         applyLayout(next);
     }
 
     function prevLayout() {
+        collapseAllExpanded();
         var prev = currentLayout - 1;
         if (prev < 1) prev = layouts.length;
         applyLayout(prev);
     }
 
     function handleLayoutCommand(arg) {
+        collapseAllExpanded();
         if (arg === "next") nextLayout();
         else if (arg === "prev") prevLayout();
         else {
@@ -583,18 +531,13 @@ ShellRoot {
         repeat: false
         property int step: 0
         onTriggered: {
-            if (step === 0) {
-                masterWallpaperTex.scheduleUpdate();
-                step = 1;
+            const chain = [masterWallpaperTex, wpDownTex, wpDown2Tex, masterBlurredTex];
+            chain[step].scheduleUpdate();
+            if (step < chain.length - 1) {
+                step += 1;
                 blurScheduler.interval = 32;
                 blurScheduler.start();
-            } else if (step === 1) {
-                wpDownTex.scheduleUpdate();
-                step = 2;
-                blurScheduler.interval = 32;
-                blurScheduler.start();
-            } else if (step === 2) {
-                masterBlurredTex.scheduleUpdate();
+            } else {
                 step = 0;
             }
         }
@@ -635,9 +578,9 @@ ShellRoot {
         }
     }
 
-    // ── Single Unified Desktop Panel Window (1920x1080 @ 180Hz) ──────
+    // ── Single Unified Desktop Panel Window (Adaptive Resolution) ──────
     // Consolidates all 13 widgets into 1 single Wayland bottom-layer surface.
-    // Slashes compositor bandwidth by 92% and achieves rock-solid 180 FPS fluid animations.
+    // Slashes compositor bandwidth by 92% and achieves rock-solid fluid animations.
     PanelWindow {
         id: desktopWindow
 
@@ -649,6 +592,10 @@ ShellRoot {
         WlrLayershell.keyboardFocus: (wWifi.isExpanded || wBt.isExpanded) ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
         WlrLayershell.exclusiveZone: -1
         color: "transparent"
+
+        // Recalcula as posições quando a resolução/escala do monitor muda
+        onWidthChanged: relayoutTimer.restart()
+        onHeightChanged: relayoutTimer.restart()
 
         // Input mask: only active widget cards intercept pointer input
         mask: Region {
@@ -665,6 +612,7 @@ ShellRoot {
             Region { item: wXwayland.cardItem }
             Region { item: wWallpaper.cardItem }
             Region { item: wApps.cardItem }
+            Region { item: wTheme.cardItem }
             Region { item: xwaylandBannerCard }
         }
 
@@ -673,10 +621,10 @@ ShellRoot {
         Image {
             id: masterWallpaper
             source: shellRoot.activeWallpaper ? ("file://" + shellRoot.activeWallpaper) : ""
-            sourceSize.width: 1920
-            sourceSize.height: 1080
-            width: 1920
-            height: 1080
+            sourceSize.width: desktopWindow.width > 0 ? desktopWindow.width : 1920
+            sourceSize.height: desktopWindow.height > 0 ? desktopWindow.height : 1200
+            width: desktopWindow.width > 0 ? desktopWindow.width : 1920
+            height: desktopWindow.height > 0 ? desktopWindow.height : 1200
             fillMode: Image.PreserveAspectCrop
             smooth: true
             mipmap: false
@@ -699,39 +647,61 @@ ShellRoot {
             textureMirroring: ShaderEffectSource.MirrorVertically
         }
 
+        // Blur em cadeia (1/2 → 1/4 → 1/2): vidro fosco bem macio como o Liquid Glass do macOS
+        readonly property real _sw: desktopWindow.width > 0 ? desktopWindow.width : 1920
+        readonly property real _sh: desktopWindow.height > 0 ? desktopWindow.height : 1200
+        readonly property int _blurW: Math.max(1, Math.round(_sw / 2))
+        readonly property int _blurH: Math.max(1, Math.round(_sh / 2))
+        readonly property int _b2W: Math.max(1, Math.round(_sw / 4))
+        readonly property int _b2H: Math.max(1, Math.round(_sh / 4))
+
         ShaderEffect {
             id: wpDownPass
-            width: 960; height: 540
+            width: desktopWindow._blurW; height: desktopWindow._blurH
             visible: false
             fragmentShader: Qt.resolvedUrl("widgets/shaders/kawase_down.frag.qsb")
             property variant source: masterWallpaperTex
-            property vector2d halfpixel: Qt.vector2d(0.5 / 960, 0.5 / 540)
+            property vector2d halfpixel: Qt.vector2d(0.5 / desktopWindow._blurW, 0.5 / desktopWindow._blurH)
         }
-
         ShaderEffectSource {
             id: wpDownTex
             sourceItem: wpDownPass
             hideSource: true
             live: false
-            textureSize: Qt.size(960, 540)
+            textureSize: Qt.size(desktopWindow._blurW, desktopWindow._blurH)
+        }
+
+        ShaderEffect {
+            id: wpDown2Pass
+            width: desktopWindow._b2W; height: desktopWindow._b2H
+            visible: false
+            fragmentShader: Qt.resolvedUrl("widgets/shaders/kawase_down.frag.qsb")
+            property variant source: wpDownTex
+            property vector2d halfpixel: Qt.vector2d(0.5 / desktopWindow._b2W, 0.5 / desktopWindow._b2H)
+        }
+        ShaderEffectSource {
+            id: wpDown2Tex
+            sourceItem: wpDown2Pass
+            hideSource: true
+            live: false
+            textureSize: Qt.size(desktopWindow._b2W, desktopWindow._b2H)
         }
 
         ShaderEffect {
             id: wpUpPass
-            width: 960; height: 540
+            width: desktopWindow._blurW; height: desktopWindow._blurH
             visible: false
             fragmentShader: Qt.resolvedUrl("widgets/shaders/kawase_up.frag.qsb")
-            property variant source: wpDownTex
-            property vector2d halfpixel: Qt.vector2d(0.5 / 960, 0.5 / 540)
+            property variant source: wpDown2Tex
+            property vector2d halfpixel: Qt.vector2d(0.5 / desktopWindow._b2W, 0.5 / desktopWindow._b2H)
         }
-
         ShaderEffectSource {
             id: masterBlurredTex
             sourceItem: wpUpPass
             hideSource: true
             live: false
             smooth: true
-            textureSize: Qt.size(960, 540)
+            textureSize: Qt.size(desktopWindow._blurW, desktopWindow._blurH)
         }
 
         // ── Primary Desktop Widgets ──────────────────────────────
@@ -757,6 +727,7 @@ ShellRoot {
                 if (isLyricsOpen) {
                     if (wWifi.isExpanded) wWifi.isExpanded = false;
                     if (wBt.isExpanded) wBt.isExpanded = false;
+                    if (wWallpaper.isExpanded) wWallpaper.isExpanded = false;
                 }
                 shellRoot.applyLayout(shellRoot.currentLayout);
             }
@@ -788,7 +759,8 @@ ShellRoot {
             onIsExpandedChanged: {
                 if (isExpanded) {
                     if (wBt.isExpanded) wBt.isExpanded = false;
-                    if (desktopMusic.isLyricsOpen) desktopMusic.isLyricsOpen = false;
+                    if (wWallpaper.isExpanded) wWallpaper.isExpanded = false;
+                    if (desktopMusic.isLyricsOpen) desktopMusic.layoutMode = "wide";
                 }
                 shellRoot.applyLayout(shellRoot.currentLayout);
             }
@@ -802,7 +774,8 @@ ShellRoot {
             onIsExpandedChanged: {
                 if (isExpanded) {
                     if (wWifi.isExpanded) wWifi.isExpanded = false;
-                    if (desktopMusic.isLyricsOpen) desktopMusic.isLyricsOpen = false;
+                    if (wWallpaper.isExpanded) wWallpaper.isExpanded = false;
+                    if (desktopMusic.isLyricsOpen) desktopMusic.layoutMode = "wide";
                 }
                 shellRoot.applyLayout(shellRoot.currentLayout);
             }
@@ -834,6 +807,19 @@ ShellRoot {
             id: wWallpaper
             sharedBackdrop: masterBlurredTex
             onNextRequested: () => shellRoot.nextWallpaper()
+            onIsExpandedChanged: {
+                if (isExpanded) {
+                    if (wWifi.isExpanded) wWifi.isExpanded = false;
+                    if (wBt.isExpanded) wBt.isExpanded = false;
+                    if (desktopMusic.isLyricsOpen) desktopMusic.layoutMode = "wide";
+                }
+                shellRoot.applyLayout(shellRoot.currentLayout);
+            }
+        }
+
+        ThemeSwitchTileWidget {
+            id: wTheme
+            sharedBackdrop: masterBlurredTex
         }
 
         AppsTileWidget {
@@ -845,7 +831,7 @@ ShellRoot {
         // ── Xwayland Reboot Countdown Toast OSD Banner ───────────
         Item {
             id: xwaylandBannerCard
-            x: (1920 - 450) / 2
+            x: (desktopWindow.width - 450) / 2
             y: shellRoot.xwaylandRestartPending ? 48 : -95
             width: 450
             height: 60
@@ -867,8 +853,8 @@ ShellRoot {
                 blurRadius: 10
                 widgetX: xwaylandBannerCard.x
                 widgetY: xwaylandBannerCard.y
-                screenWidth: 1920
-                screenHeight: 1080
+                screenWidth: desktopWindow.width > 0 ? desktopWindow.width : 1920
+                screenHeight: desktopWindow.height > 0 ? desktopWindow.height : 1200
             }
 
             Rectangle {

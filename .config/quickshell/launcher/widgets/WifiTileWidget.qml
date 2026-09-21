@@ -114,10 +114,10 @@ Item {
         width: root.isExpanded ? 340 : root.targetWidth
         height: root.isExpanded ? 290 : root.targetHeight
 
-        Behavior on x { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
-        Behavior on y { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
-        Behavior on width { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
-        Behavior on height { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
+        Behavior on x { NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
+        Behavior on y { NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
+        Behavior on width { NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
+        Behavior on height { NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
 
         scale: (tileMouse.pressed && !root.isExpanded) ? 0.92 : ((tileMouse.containsMouse && !root.isExpanded) ? 1.04 : 1.0)
         Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
@@ -126,15 +126,13 @@ Item {
             id: glass
             anchors.fill: parent
             radius: root.isExpanded ? 28 : Math.min(24, Math.min(full.height, full.width) * 0.45)
-            roundness: 7.5
-            refractThickness: 35
-            refractIOR: 1.7
-            refractScale: 65
-            tint: "#ffffff"
-            tintAlpha: 0.10
-            chromaStrength: 0.30
-            specStrength: 0.70
-            blurRadius: 6
+            roundness: 4.6
+            tint: root.isExpanded ? "#0a1024" : "#ffffff"
+            tintAlpha: root.isExpanded ? 0.30 : 0.15
+            lumaCap: root.isExpanded ? 0.50 : 0.80
+            Behavior on tint { ColorAnimation { duration: 320 } }
+            Behavior on tintAlpha { NumberAnimation { duration: 320 } }
+            Behavior on lumaCap { NumberAnimation { duration: 320 } }
             widgetX: full.x
             widgetY: full.y
             screenWidth: root.width > 0 ? root.width : 1920
@@ -181,254 +179,214 @@ Item {
         }
 
         // ══════════════════════════════════════════════════════════════
-        // 2. EXPANDED MODE: INTERACTIVE WI-FI NETWORK BROWSER
+        // 2. EXPANDED MODE: WI-FI NETWORK BROWSER
         // ══════════════════════════════════════════════════════════════
         Item {
+            id: expPanel
             anchors.fill: parent
-            visible: root.isExpanded
-            anchors.margins: 14
+            anchors.margins: 16
+            visible: root.isExpanded || opacity > 0.01
+            opacity: root.isExpanded ? 1 : 0
+            Behavior on opacity { NumberAnimation { duration: 240 } }
             clip: true
 
-            // Header Row
-            Row {
+            PanelHeader {
                 id: expHeader
                 width: parent.width
-                height: 28
-                spacing: 10
-
-                Rectangle {
-                    width: 28; height: 28
-                    radius: 14
-                    color: Qt.rgba(1, 1, 1, 0.20)
-                    anchors.verticalCenter: parent.verticalCenter
-
-                    Image {
-                        anchors.centerIn: parent
-                        width: 14; height: 14
-                        source: "file:///home/gabriel/.config/quickshell/assets/icons/wifi.svg"
-                        fillMode: Image.PreserveAspectFit
-                    }
-                }
-
-                Text {
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: "Wi-Fi"
-                    color: "#ffffff"
-                    font.family: sfProRounded.name
-                    font.pixelSize: 14
-                    font.weight: Font.Bold
-                }
-
-                Item { Layout.fillWidth: true; width: full.width - 230 }
-
-                // Wi-Fi On/Off Pill Switch
-                Rectangle {
-                    width: 38; height: 20
-                    radius: 10
-                    anchors.verticalCenter: parent.verticalCenter
-                    color: root.isWifiOn ? Qt.rgba(0.2, 0.8, 0.4, 0.55) : Qt.rgba(1, 1, 1, 0.16)
-                    border.width: 1
-                    border.color: Qt.rgba(1, 1, 1, 0.20)
-
-                    Rectangle {
-                        width: 16; height: 16
-                        radius: 8
-                        x: root.isWifiOn ? 20 : 2
-                        anchors.verticalCenter: parent.verticalCenter
-                        color: "#ffffff"
-                        Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.toggleRequested()
-                    }
-                }
-
-                // Refresh Button
-                Rectangle {
-                    width: 22; height: 22
-                    radius: 11
-                    anchors.verticalCenter: parent.verticalCenter
-                    color: Qt.rgba(1, 1, 1, 0.14)
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: "↻"
-                        color: "#ffffff"
-                        font.pixelSize: 13
-                        opacity: root.isScanning ? 0.4 : 0.9
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.scanNetworks()
-                    }
-                }
-
-                // Close / Collapse Button
-                Rectangle {
-                    width: 22; height: 22
-                    radius: 11
-                    anchors.verticalCenter: parent.verticalCenter
-                    color: Qt.rgba(1, 1, 1, 0.14)
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: "✕"
-                        color: "#ffffff"
-                        font.pixelSize: 10
-                        opacity: 0.85
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.isExpanded = false
-                    }
-                }
+                iconSource: "file:///home/gabriel/.config/quickshell/assets/icons/wifi.svg"
+                title: "Wi-Fi"
+                subtitle: root.statusMessage !== "" ? root.statusMessage
+                        : (!root.isWifiOn ? "Off"
+                        : (root.isScanning ? "Scanning…"
+                        : (root.wifiSsid !== "" ? root.wifiSsid : "Not connected")))
+                showSwitch: true
+                switchOn: root.isWifiOn
+                busy: root.isScanning
+                onSwitchToggled: root.toggleRequested()
+                onRefreshClicked: root.scanNetworks()
+                onCloseClicked: root.isExpanded = false
             }
 
-            // Status message (if any)
-            Text {
-                id: statusLabel
+            Rectangle {
+                id: expDivider
                 anchors.top: expHeader.bottom
-                anchors.topMargin: 4
-                anchors.left: parent.left
-                text: root.statusMessage
-                color: Qt.rgba(1, 1, 1, 0.65)
-                font.family: sfRegular.name
-                font.pixelSize: 10
-                visible: root.statusMessage !== ""
+                anchors.topMargin: 8
+                width: parent.width
+                height: 1
+                color: Qt.rgba(1, 1, 1, 0.14)
             }
 
-            // Network List
             ListView {
                 id: netListView
-                anchors.top: statusLabel.visible ? statusLabel.bottom : expHeader.bottom
+                anchors.top: expDivider.bottom
                 anchors.topMargin: 8
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.bottom: parent.bottom
                 clip: true
-                spacing: 4
+                spacing: 5
+                boundsBehavior: Flickable.StopAtBounds
                 model: root.networkList
 
                 delegate: Rectangle {
+                    id: netRow
+                    readonly property bool selected: root.selectedSsid === modelData.ssid
+                    readonly property int sigLevel: modelData.signal > 75 ? 4 : (modelData.signal > 50 ? 3 : (modelData.signal > 25 ? 2 : 1))
+
                     width: netListView.width
-                    height: (root.selectedSsid === modelData.ssid) ? 68 : 34
-                    radius: 10
-                    color: modelData.in_use ? Qt.rgba(1, 1, 1, 0.18) : (rowMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.12) : Qt.rgba(1, 1, 1, 0.05))
-                    border.width: modelData.in_use ? 1 : 0
-                    border.color: Qt.rgba(1, 1, 1, 0.25)
+                    height: selected ? 84 : 40
+                    radius: 13
+                    color: modelData.in_use ? Qt.rgba(1, 1, 1, 0.20) : (rowMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.14) : Qt.rgba(1, 1, 1, 0.08))
+                    border.width: 1
+                    border.color: modelData.in_use ? Qt.rgba(1, 1, 1, 0.30) : Qt.rgba(1, 1, 1, 0.06)
+                    clip: true
 
-                    Behavior on height { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
-
-                    Column {
-                        anchors.fill: parent
-                        anchors.margins: 6
-                        spacing: 6
-
-                        Row {
-                            width: parent.width
-                            height: 22
-                            spacing: 8
-
-                            Text {
-                                text: modelData.signal > 70 ? "●●●" : (modelData.signal > 40 ? "●●○" : "●○○")
-                                color: modelData.in_use ? "#34d399" : Qt.rgba(1, 1, 1, 0.70)
-                                font.pixelSize: 9
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
-
-                            Text {
-                                text: modelData.ssid
-                                color: "#ffffff"
-                                font.family: sfRegular.name
-                                font.pixelSize: 12
-                                font.weight: modelData.in_use ? Font.Bold : Font.Normal
-                                elide: Text.ElideRight
-                                width: parent.width - 110
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
-
-                            Item { Layout.fillWidth: true }
-
-                            Text {
-                                text: modelData.in_use ? "Connected" : (modelData.is_locked ? "🔒" : "")
-                                color: modelData.in_use ? "#34d399" : Qt.rgba(1, 1, 1, 0.55)
-                                font.family: sfRegular.name
-                                font.pixelSize: 10
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
-                        }
-
-                        // Inline Password Row if selected
-                        Row {
-                            width: parent.width
-                            height: 24
-                            spacing: 6
-                            visible: root.selectedSsid === modelData.ssid && !modelData.in_use
-
-                            Rectangle {
-                                width: parent.width - 60
-                                height: 24
-                                radius: 6
-                                color: Qt.rgba(0, 0, 0, 0.35)
-                                border.width: 1
-                                border.color: Qt.rgba(1, 1, 1, 0.20)
-
-                                TextInput {
-                                    id: pwdField
-                                    anchors.fill: parent
-                                    anchors.margins: 4
-                                    color: "#ffffff"
-                                    font.pixelSize: 11
-                                    echoMode: TextInput.Password
-                                    onTextChanged: root.passwordInput = text
-                                    onAccepted: root.connectTo(modelData.ssid, text)
-                                }
-                            }
-
-                            Rectangle {
-                                width: 50; height: 24
-                                radius: 6
-                                color: Qt.rgba(1, 1, 1, 0.25)
-
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: "Join"
-                                    color: "#ffffff"
-                                    font.pixelSize: 10
-                                    font.weight: Font.Bold
-                                }
-
-                                MouseArea {
-                                    anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: root.connectTo(modelData.ssid, pwdField.text)
-                                }
-                            }
-                        }
-                    }
+                    Behavior on height { NumberAnimation { duration: 260; easing.type: Easing.OutBack; easing.overshoot: 0.6 } }
+                    Behavior on color { ColorAnimation { duration: 120 } }
 
                     MouseArea {
                         id: rowMouse
-                        anchors.fill: parent
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        height: 40
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
                             if (modelData.in_use) return;
                             if (modelData.is_locked) {
-                                root.selectedSsid = (root.selectedSsid === modelData.ssid) ? "" : modelData.ssid;
+                                root.selectedSsid = netRow.selected ? "" : modelData.ssid;
                             } else {
                                 root.connectTo(modelData.ssid, null);
                             }
                         }
                     }
+
+                    SignalBars {
+                        id: sigBars
+                        level: netRow.sigLevel
+                        activeColor: modelData.in_use ? "#34d399" : "#ffffff"
+                        anchors.left: parent.left
+                        anchors.leftMargin: 14
+                        y: (40 - height) / 2
+                    }
+
+                    Text {
+                        anchors.left: sigBars.right
+                        anchors.leftMargin: 12
+                        anchors.right: trailing.left
+                        anchors.rightMargin: 8
+                        y: (40 - height) / 2
+                        text: modelData.ssid
+                        color: "#ffffff"
+                        font.family: sfRegular.name
+                        font.pixelSize: 13
+                        font.weight: modelData.in_use ? Font.Bold : Font.Medium
+                        elide: Text.ElideRight
+                        style: Text.Raised
+                        styleColor: Qt.rgba(0, 0, 0, 0.32)
+                    }
+
+                    Row {
+                        id: trailing
+                        anchors.right: parent.right
+                        anchors.rightMargin: 14
+                        y: (40 - height) / 2
+                        spacing: 6
+
+                        Image {
+                            visible: modelData.in_use
+                            width: 14; height: 14
+                            source: "file:///home/gabriel/.config/quickshell/assets/icons/check.svg"
+                            sourceSize.width: 32; sourceSize.height: 32
+                            fillMode: Image.PreserveAspectFit
+                            anchors.verticalCenter: parent.verticalCenter
+                            layer.enabled: true
+                        }
+                        Image {
+                            visible: !modelData.in_use && modelData.is_locked
+                            width: 12; height: 12
+                            source: "file:///home/gabriel/.config/quickshell/assets/icons/lock.svg"
+                            sourceSize.width: 32; sourceSize.height: 32
+                            fillMode: Image.PreserveAspectFit
+                            opacity: 0.75
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                    }
+
+                    // Campo de senha (redes protegidas)
+                    Row {
+                        visible: netRow.selected && !modelData.in_use
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.margins: 10
+                        y: 44
+                        height: 30
+                        spacing: 8
+
+                        Rectangle {
+                            width: parent.width - 64
+                            height: 30
+                            radius: 10
+                            color: Qt.rgba(0, 0, 0, 0.34)
+                            border.width: 1
+                            border.color: Qt.rgba(1, 1, 1, pwdField.activeFocus ? 0.45 : 0.18)
+
+                            TextInput {
+                                id: pwdField
+                                anchors.fill: parent
+                                anchors.leftMargin: 10
+                                anchors.rightMargin: 10
+                                verticalAlignment: TextInput.AlignVCenter
+                                color: "#ffffff"
+                                font.family: sfRegular.name
+                                font.pixelSize: 12
+                                echoMode: TextInput.Password
+                                selectByMouse: true
+                                onTextChanged: root.passwordInput = text
+                                onAccepted: root.connectTo(modelData.ssid, text)
+
+                                Text {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    visible: pwdField.text === ""
+                                    text: "Password"
+                                    color: Qt.rgba(1, 1, 1, 0.45)
+                                    font: pwdField.font
+                                }
+                            }
+                        }
+
+                        Rectangle {
+                            width: 56; height: 30
+                            radius: 15
+                            color: joinMouse.pressed ? "#0a6ed1" : "#0a84ff"
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: "Join"
+                                color: "#ffffff"
+                                font.family: sfRegular.name
+                                font.pixelSize: 12
+                                font.weight: Font.Bold
+                            }
+                            MouseArea {
+                                id: joinMouse
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: root.connectTo(modelData.ssid, pwdField.text)
+                            }
+                        }
+                    }
                 }
+            }
+
+            Text {
+                anchors.centerIn: netListView
+                visible: root.networkList.length === 0
+                text: !root.isWifiOn ? "Wi-Fi is off" : (root.isScanning ? "Looking for networks…" : "No networks found")
+                color: Qt.rgba(1, 1, 1, 0.70)
+                font.family: sfRegular.name
+                font.pixelSize: 12
             }
         }
 

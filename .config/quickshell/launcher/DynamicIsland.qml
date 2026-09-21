@@ -39,7 +39,7 @@ PanelWindow {
         if (root.screen && root.screen.height > 100) return root.screen.height
         if (Hyprland.focusedMonitor && Hyprland.focusedMonitor.height > 100) return Hyprland.focusedMonitor.height
         if (Quickshell.screens && Quickshell.screens.length > 0 && Quickshell.screens[0].height > 100) return Quickshell.screens[0].height
-        return 1080
+        return 1200
     }
 
     implicitWidth: root.screenWidth

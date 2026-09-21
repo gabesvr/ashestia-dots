@@ -10,27 +10,62 @@ Item {
     // Shape
     property real radius: 100
     // Superellipse exponent: 2 = plain rounded rect, 5.5 ≈ iOS squircle, 7.5 = KDE liquid glass squircle
-    property real roundness: 7.5
+    property real roundness: 4.6
 
     // Snell-on-a-dome refraction parameters
-    property real refractThickness: 35
-    property real refractIOR: 1.7
-    property real refractScale: 65
+    property real refractThickness: 18
+    property real refractIOR: 1.5
+    property real refractScale: 34
     property color tint: "#ffffff"
-    property real tintAlpha: 0.10
-    property real chromaStrength: 0.30
+    property real tintAlpha: 0.12
+    property real chromaStrength: 0.05
+
+    // Limitador de brilho do fundo (legibilidade sobre nuvens/áreas brancas). 1.0 = desligado.
+    property real lumaCap: 0.80
+
+    // Estilo Liquid Glass: vibrância do fundo, fio de luz na borda, brilho de topo e sombra de profundidade
+    property real saturation: 1.45
+    property real rim: 0.0
+    property real sheen: 0.7
+    property real innerShade: 0.0
+    // Tema sólido (botão-chave): 0 = vidro, 1 = cinza-escuro. Transição em "onda" a partir do botão.
+    property real solidT: 0
+    Behavior on solidT { enabled: GlassTheme.animate; NumberAnimation { duration: 520; easing.type: Easing.InOutCubic } }
+
+    Timer {
+        id: rippleTimer
+        repeat: false
+        onTriggered: glass.solidT = GlassTheme.solid ? 1 : 0
+    }
+    function _applySolid() {
+        if (!GlassTheme.animate) { glass.solidT = GlassTheme.solid ? 1 : 0; return; }
+        const cx = glass.widgetX + glass.width / 2 - GlassTheme.originX;
+        const cy = glass.widgetY + glass.height / 2 - GlassTheme.originY;
+        rippleTimer.interval = Math.min(650, Math.sqrt(cx * cx + cy * cy) * 0.5);
+        rippleTimer.restart();
+    }
+    Connections {
+        target: GlassTheme
+        function onSolidChanged() { glass._applySolid(); }
+    }
+    Component.onCompleted: glass.solidT = GlassTheme.solid ? 1 : 0
+
+    property bool shadowEnabled: false
+    property real shadowStrength: 0.045
+    property real shadowBlur: 24
+    property real shadowOffset: 8
 
     // Dual Kawase blur spread in widget pixels (used in fallback mode)
     property real blurRadius: 6
 
     // Border specular highlight
     property bool specEnabled: true
-    property real specStrength: 0.70
+    property real specStrength: 0.0
 
     // Screen and positioning
     property string wallpaperPath: ""
-    property real screenWidth: 1536
-    property real screenHeight: 960
+    property real screenWidth: 1920
+    property real screenHeight: 1200
     property real widgetX: 0
     property real widgetY: 0
 
@@ -73,6 +108,26 @@ Item {
     readonly property real _widgetW: Math.max(1, glass.width)
     readonly property real _widgetH: Math.max(1, glass.height)
 
+    // Sombra suave sob o vidro (analítica, sem passes de blur)
+    ShaderEffect {
+        id: shadowFx
+        visible: glass.shadowEnabled && glass.width > 1 && glass.height > 1
+        z: -1
+        readonly property real padPx: glass.shadowBlur * 1.6 + glass.shadowOffset
+        x: -padPx
+        y: -padPx
+        width: glass.width + 2 * padPx
+        height: glass.height + 2 * padPx
+        fragmentShader: Qt.resolvedUrl("shaders/glassshadow.frag.qsb")
+        property size size: Qt.size(glass._widgetW, glass._widgetH)
+        property real pad: padPx
+        property real radius: glass.radius
+        property real roundness: glassShader.roundness
+        property real blur: glass.shadowBlur
+        property real strength: glass.shadowStrength
+        property real offsetY: glass.shadowOffset
+    }
+
     // Liquid Glass Snell Shader
     ShaderEffect {
         id: glassShader
@@ -93,6 +148,9 @@ Item {
         property real mouseFade: glass.mouseFade
         property real specStrength: glass.specEnabled ? glass.specStrength : 0.0
         property vector4d overlayDarken: Qt.vector4d(0, 0, 0, 0)
+        property real lumaCap: glass.lumaCap
+        property real solidT: glass.solidT
+        property vector4d style: Qt.vector4d(glass.saturation, glass.rim, glass.sheen, glass.innerShade)
         property vector2d uvOffset: glass.sharedBackdrop ? glass._uvOff : Qt.vector2d(0, 0)
         property vector2d uvScale: glass.sharedBackdrop ? glass._uvSc : Qt.vector2d(1, 1)
     }
@@ -135,10 +193,10 @@ Item {
                 Image {
                     id: wallpaperItem
                     source: glass.wallpaperPath ? (glass.wallpaperPath.startsWith("/") ? ("file://" + glass.wallpaperPath) : glass.wallpaperPath) : ""
-                    sourceSize.width: 1920
-                    sourceSize.height: 1080
-                    width: 1920
-                    height: 1080
+                    sourceSize.width: glass.screenWidth
+                    sourceSize.height: glass.screenHeight
+                    width: glass.screenWidth
+                    height: glass.screenHeight
                     fillMode: Image.PreserveAspectCrop
                     smooth: true
                     mipmap: false

@@ -42,7 +42,7 @@ hl.env("PROTON_ENABLE_NVAPI", "1")     -- NVAPI para Proton/Wine
 hl.env("DXVK_ASYNC", "1")             -- DXVK async shaders
 
 -- Cursor
-hl.env("XCURSOR_SIZE", "24")
+hl.env("XCURSOR_SIZE", "30")
 hl.env("HYPRCURSOR_SIZE", "24")
 
 -- XDG
