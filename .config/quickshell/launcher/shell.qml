@@ -95,12 +95,52 @@ ShellRoot {
         running: false
         onExited: statusPoller.running = true
     }
+
+    property int xwaylandCountdown: 0
+    property bool xwaylandRestartPending: false
+
+    Timer {
+        id: xwaylandRebootTimer
+        interval: 1000
+        repeat: true
+        running: shellRoot.xwaylandCountdown > 0
+        onTriggered: {
+            shellRoot.xwaylandCountdown--;
+            if (shellRoot.xwaylandCountdown <= 0) {
+                shellRoot.xwaylandCountdown = 0;
+                xwaylandRebootTimer.stop();
+                exec("systemctl reboot");
+            }
+        }
+    }
+
     function toggleXwayland() {
+        if (shellRoot.xwaylandRestartPending) {
+            cancelXwaylandCountdown();
+            return;
+        }
         const next = !systemXwayland;
         systemXwayland = next;
-        xwaylandProc.command = ["sh", "-c", "echo '" + (next ? "true" : "false") + "' > /home/gabriel/.config/hypr/xwayland_state"];
-        xwaylandProc.running = false;
-        xwaylandProc.running = true;
+        exec("sh -c 'echo " + (next ? "true" : "false") + " > /home/gabriel/.config/hypr/xwayland_state'");
+        shellRoot.xwaylandCountdown = 5;
+        shellRoot.xwaylandRestartPending = true;
+        xwaylandRebootTimer.start();
+    }
+
+    function cancelXwaylandCountdown() {
+        xwaylandRebootTimer.stop();
+        shellRoot.xwaylandCountdown = 0;
+        shellRoot.xwaylandRestartPending = false;
+        const reverted = !systemXwayland;
+        systemXwayland = reverted;
+        exec("sh -c 'echo " + (reverted ? "true" : "false") + " > /home/gabriel/.config/hypr/xwayland_state'");
+    }
+
+    function rebootNow() {
+        xwaylandRebootTimer.stop();
+        shellRoot.xwaylandCountdown = 0;
+        shellRoot.xwaylandRestartPending = false;
+        exec("systemctl reboot");
     }
 
     Process {
@@ -625,6 +665,7 @@ ShellRoot {
             Region { item: wXwayland.cardItem }
             Region { item: wWallpaper.cardItem }
             Region { item: wApps.cardItem }
+            Region { item: xwaylandBannerCard }
         }
 
         // Shared full-screen wallpaper source & Kawase blur pipeline
@@ -785,6 +826,7 @@ ShellRoot {
             id: wXwayland
             sharedBackdrop: masterBlurredTex
             isXwayland: shellRoot.systemXwayland
+            countdown: shellRoot.xwaylandCountdown
             onToggleRequested: () => shellRoot.toggleXwayland()
         }
 
@@ -798,6 +840,152 @@ ShellRoot {
             id: wApps
             sharedBackdrop: masterBlurredTex
             onOpenLaunchpadRequested: () => launchpad.toggleLaunchpad()
+        }
+
+        // ── Xwayland Reboot Countdown Toast OSD Banner ───────────
+        Item {
+            id: xwaylandBannerCard
+            x: (1920 - 450) / 2
+            y: shellRoot.xwaylandRestartPending ? 48 : -95
+            width: 450
+            height: 60
+            visible: shellRoot.xwaylandRestartPending || y > -90
+
+            Behavior on y { NumberAnimation { duration: 350; easing.type: Easing.OutBack } }
+
+            LiquidGlass {
+                id: bannerGlass
+                anchors.fill: parent
+                radius: 20
+                roundness: 6.5
+                refractThickness: 30
+                refractIOR: 1.6
+                refractScale: 60
+                tint: "#111318"
+                tintAlpha: 0.85
+                specStrength: 0.80
+                blurRadius: 10
+                widgetX: xwaylandBannerCard.x
+                widgetY: xwaylandBannerCard.y
+                screenWidth: 1920
+                screenHeight: 1080
+            }
+
+            Rectangle {
+                anchors.fill: parent
+                radius: 20
+                color: Qt.rgba(255/255, 149/255, 0/255, 0.10)
+                border.width: 1.5
+                border.color: Qt.rgba(255/255, 149/255, 0/255, 0.60)
+            }
+
+            Row {
+                anchors.fill: parent
+                anchors.leftMargin: 14
+                anchors.rightMargin: 14
+                spacing: 12
+
+                // Countdown Circle Badge
+                Rectangle {
+                    width: 38
+                    height: 38
+                    radius: 19
+                    color: Qt.rgba(255/255, 149/255, 0/255, 0.35)
+                    border.width: 1
+                    border.color: "#ff9500"
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: shellRoot.xwaylandCountdown + "s"
+                        font.family: sfRegular.name
+                        font.pixelSize: 15
+                        font.weight: Font.Black
+                        color: "#ff9500"
+                    }
+                }
+
+                // Alert Texts
+                Column {
+                    width: 220
+                    spacing: 2
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    Text {
+                        width: parent.width
+                        text: shellRoot.systemXwayland ? "Ativando Xwayland..." : "Desativando Xwayland..."
+                        font.family: sfRegular.name
+                        font.pixelSize: 13
+                        font.weight: Font.Bold
+                        color: "#ffffff"
+                    }
+                    Text {
+                        width: parent.width
+                        text: "Reiniciando o PC em " + shellRoot.xwaylandCountdown + "s para aplicar..."
+                        font.family: sfRegular.name
+                        font.pixelSize: 11
+                        color: "#ff9500"
+                    }
+                }
+
+                // Cancel Button
+                Rectangle {
+                    width: 68
+                    height: 30
+                    radius: 15
+                    color: cancelMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.25) : Qt.rgba(1, 1, 1, 0.14)
+                    border.width: 1
+                    border.color: Qt.rgba(1, 1, 1, 0.22)
+                    anchors.verticalCenter: parent.verticalCenter
+                    scale: cancelMouse.pressed ? 0.92 : 1.0
+                    Behavior on scale { NumberAnimation { duration: 90 } }
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "Cancelar"
+                        font.family: sfRegular.name
+                        font.pixelSize: 11
+                        font.weight: Font.DemiBold
+                        color: "#ffffff"
+                    }
+
+                    MouseArea {
+                        id: cancelMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: shellRoot.cancelXwaylandCountdown()
+                    }
+                }
+
+                // Reboot Now Button
+                Rectangle {
+                    width: 68
+                    height: 30
+                    radius: 15
+                    color: rebootNowMouse.containsMouse ? "#ff3b30" : Qt.rgba(255/255, 59/255, 48/255, 0.85)
+                    anchors.verticalCenter: parent.verticalCenter
+                    scale: rebootNowMouse.pressed ? 0.92 : 1.0
+                    Behavior on scale { NumberAnimation { duration: 90 } }
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "Reiniciar"
+                        font.family: sfRegular.name
+                        font.pixelSize: 11
+                        font.weight: Font.Bold
+                        color: "#ffffff"
+                    }
+
+                    MouseArea {
+                        id: rebootNowMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: shellRoot.rebootNow()
+                    }
+                }
+            }
         }
     }
 
