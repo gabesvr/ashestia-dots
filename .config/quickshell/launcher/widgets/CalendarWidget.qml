@@ -4,23 +4,12 @@ import Quickshell.Io
 import QtQuick
 import QtQuick.Layouts
 
-PanelWindow {
+Item {
     id: calendarWindow
+    anchors.fill: parent
 
-    anchors.top: true
-    anchors.bottom: true
-    anchors.left: true
-    anchors.right: true
-
-    WlrLayershell.layer: WlrLayer.Bottom
-    WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
-    WlrLayershell.exclusiveZone: -1
-    color: "transparent"
-
-    // Only capture mouse pointer inside the widget card
-    mask: Region {
-        item: full
-    }
+    property alias cardItem: full
+    property alias sharedBackdrop: glass.sharedBackdrop
 
     // Font loading
     FontLoader {
@@ -133,9 +122,9 @@ PanelWindow {
         width: calendarWindow.targetWidth
         height: 195
 
-        Behavior on x { NumberAnimation { duration: 700; easing.type: Easing.OutQuint } }
-        Behavior on y { NumberAnimation { duration: 700; easing.type: Easing.OutQuint } }
-        Behavior on width { NumberAnimation { duration: 700; easing.type: Easing.OutQuint } }
+        Behavior on x { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
+        Behavior on y { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
+        Behavior on width { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
 
         // Liquid Glass Background
         LiquidGlass {

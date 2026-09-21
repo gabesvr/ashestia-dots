@@ -4,23 +4,12 @@ import Quickshell.Io
 import QtQuick
 import QtQuick.Layouts
 
-PanelWindow {
+Item {
     id: clockWindow
+    anchors.fill: parent
 
-    anchors.top: true
-    anchors.bottom: true
-    anchors.left: true
-    anchors.right: true
-
-    WlrLayershell.layer: WlrLayer.Bottom
-    WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
-    WlrLayershell.exclusiveZone: -1
-    color: "transparent"
-
-    // Only intercept pointer input inside the clock card itself
-    mask: Region {
-        item: full
-    }
+    property alias cardItem: full
+    property alias sharedBackdrop: glass.sharedBackdrop
 
     // Load original KDE widget fonts
     FontLoader {
@@ -105,8 +94,8 @@ PanelWindow {
         width: 240
         height: 140
 
-        Behavior on x { NumberAnimation { duration: 700; easing.type: Easing.OutQuint } }
-        Behavior on y { NumberAnimation { duration: 700; easing.type: Easing.OutQuint } }
+        Behavior on x { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
+        Behavior on y { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
 
         // Liquid Glass Frosted Background
         LiquidGlass {

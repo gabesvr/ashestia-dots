@@ -28,7 +28,7 @@ Item {
     // ── Processo de Listagem ──────────────────────────────────
     Process {
         id: wifiLister
-        command: ["/home/gabriel/.config/quickshell/scripts/wifi_tool.py", "list"]
+        command: ["/home/gabriel/.config/quickshell/scripts/wifi_tool.sh", "list"]
         running: false
         stdout: SplitParser {
             onRead: (line) => {
@@ -68,29 +68,29 @@ Item {
     }
 
     function toggleWifi() {
-        wifiAction.command = ["/home/gabriel/.config/quickshell/scripts/wifi_tool.py", "toggle"]
+        wifiAction.command = ["/home/gabriel/.config/quickshell/scripts/wifi_tool.sh", "toggle"]
         wifiAction.running = true
     }
 
     function connect(ssid, password) {
         root.statusMessage = "Conectando a " + ssid + "..."
         if (password) {
-            wifiAction.command = ["/home/gabriel/.config/quickshell/scripts/wifi_tool.py", "connect", ssid, password]
+            wifiAction.command = ["/home/gabriel/.config/quickshell/scripts/wifi_tool.sh", "connect", ssid, password]
         } else {
-            wifiAction.command = ["/home/gabriel/.config/quickshell/scripts/wifi_tool.py", "connect", ssid]
+            wifiAction.command = ["/home/gabriel/.config/quickshell/scripts/wifi_tool.sh", "connect", ssid]
         }
         wifiAction.running = true
     }
 
     function disconnect() {
         root.statusMessage = "Desconectando..."
-        wifiAction.command = ["/home/gabriel/.config/quickshell/scripts/wifi_tool.py", "disconnect"]
+        wifiAction.command = ["/home/gabriel/.config/quickshell/scripts/wifi_tool.sh", "disconnect"]
         wifiAction.running = true
     }
 
     function forget(ssid) {
         root.statusMessage = "Esquecendo rede " + ssid + "..."
-        wifiAction.command = ["/home/gabriel/.config/quickshell/scripts/wifi_tool.py", "forget", ssid]
+        wifiAction.command = ["/home/gabriel/.config/quickshell/scripts/wifi_tool.sh", "forget", ssid]
         wifiAction.running = true
     }
 

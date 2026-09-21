@@ -3,3 +3,6 @@
 *.bak
 *.old
 .DS_Store
+.music_cache.json
+controls_status
+apps_tool

@@ -17,8 +17,8 @@
 * **Processor:** AMD Ryzen 7 7445HS
 * **Graphics:** NVIDIA GeForce RTX 4050 Laptop (140W TGP)
 * **Compositor:** Hyprland 0.47+ (Configured in Lua via `hyprland.lua`)
-* **Bar & Desktop Widgets:** QuickShell Desktop Widgets (Clock, Calendar, Weather, Music with Synced Lyrics & LiquidGlass)
-* **Terminal:** foot / footclient (Instant startup via systemd daemon, alpha 0.80)
+* **Bar & Desktop Widgets:** QuickShell Desktop Widgets (Clock, Calendar, Quick Controls, Weather, Music with Synced Lyrics & LiquidGlass)
+* **Terminal:** foot / footclient (Instant startup via systemd daemon, solid black background)
 * **Color Palette:** Matugen (Dynamic color generation synchronized with wallpaper)
 * **Terminal Fetch:** Fastfetch with Sixel graphics and automatic picture rotation
 * **Audio Visualizer:** Cava
@@ -26,10 +26,24 @@
 
 ---
 
+## Desktop Widgets
+
+The setup includes custom QuickShell widgets rendered with high-performance LiquidGlass shaders:
+
+* **Clock Widget:** Digital clock with localized timezone offset and glassmorphism styling.
+* **Calendar Widget:** Full-month calendar view with active day highlights.
+* **Quick Controls & Sliders:**
+  * Interactive volume and brightness sliders.
+  * Fast control tiles: Wi-Fi status, Bluetooth toggle, App drawer, Performance Turbo mode, Do Not Disturb (DND), Display settings, and Wallpaper picker.
+* **Weather Widget:** Live weather metrics powered by Open-Meteo, including current conditions, temperature, 5-hour hourly forecast, and 5-day outlook.
+* **Music Widget & Synced Lyrics:** Real-time player with sub-second Spotify synchronization, album art caching, track progress scrubber, and interactive synchronized lyrics viewer.
+
+---
+
 ## Foot Terminal & Fastfetch Sixel
 
 The terminal setup includes:
-* **Smooth Transparency:** `alpha=0.80` with `JetBrainsMono Nerd Font`.
+* **Clean & Distraction-Free:** Solid black styling with `JetBrainsMono Nerd Font` for maximum responsiveness and resource efficiency.
 * **Dynamic Palette:** Colors generated and synchronized in real time via Matugen based on the active wallpaper.
 * **Fish Greeting & Fastfetch:** Automatic circular rotation of pictures from `~/Pictures/Goticas` rendered in high resolution directly in the terminal using Sixel graphics.
 
@@ -52,7 +66,7 @@ chmod +x install.sh
 
 | Shortcut | Action |
 | :--- | :--- |
-| `Super + Enter` | Open Terminal (`footclient`) |
+| `Super + Enter` | Open Terminal (`foot`) |
 | `Super + B` | Open Browser (`Firefox`) |
 | `Super + E` | Open File Manager (`Thunar`) |
 | `Super + Space` | Toggle Control Center / Island Menu |

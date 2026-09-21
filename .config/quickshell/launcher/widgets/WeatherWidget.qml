@@ -4,22 +4,12 @@ import Quickshell.Io
 import QtQuick
 import QtQuick.Layouts
 
-PanelWindow {
+Item {
     id: weatherWindow
+    anchors.fill: parent
 
-    anchors.top: true
-    anchors.bottom: true
-    anchors.left: true
-    anchors.right: true
-
-    WlrLayershell.layer: WlrLayer.Bottom
-    WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
-    WlrLayershell.exclusiveZone: -1
-    color: "transparent"
-
-    mask: Region {
-        item: full
-    }
+    property alias cardItem: full
+    property alias sharedBackdrop: glass.sharedBackdrop
 
     FontLoader {
         id: sfRegular
@@ -61,9 +51,9 @@ PanelWindow {
         width: weatherWindow.targetWidth
         height: 340
 
-        Behavior on x { NumberAnimation { duration: 700; easing.type: Easing.OutQuint } }
-        Behavior on y { NumberAnimation { duration: 700; easing.type: Easing.OutQuint } }
-        Behavior on width { NumberAnimation { duration: 700; easing.type: Easing.OutQuint } }
+        Behavior on x { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
+        Behavior on y { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
+        Behavior on width { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
 
         LiquidGlass {
             id: glass

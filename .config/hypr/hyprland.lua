@@ -6,8 +6,8 @@
 -- Carregar variáveis de ambiente (NVIDIA + Wayland)
 require("env")
 
--- Programas padrão (footclient usa o foot-server do systemd para abertura instantânea e menos RAM)
-local terminal    = "footclient"
+-- Programas padrão (foot standalone lê foot.ini direto, 100% sólido e preto simples)
+local terminal    = "foot"
 local browser     = "firefox"
 local fileManager = "thunar"
 local islandMenu    = "/home/gabriel/.local/bin/island-toggle"     -- QuickShell Control Center / Island
@@ -492,6 +492,7 @@ match  = { class = "^(foot-float)$" },
 float  = true,
 size   = "960 600",
 move   = "cursor_x-480 cursor_y-300",
+tag    = "+hyprglass_disabled",
 })
 
 
@@ -537,6 +538,23 @@ size   = "960 640",
 hl.window_rule({
 name   = "pavucontrol-float",
 match  = { class = "^(pavucontrol|org\\.pulseaudio\\.pavucontrol)$" },
+float  = true,
+center = true,
+size   = "820 540",
+})
+
+-- ACCELA: sempre flutuante e centralizado (Custom Theme by gabesvr)
+hl.window_rule({
+name   = "accela-float",
+match  = { class = "^([aA][cC][cC][eE][lL][aA]|god\\.is\\.in\\.the\\.wired\\.accela)$" },
+float  = true,
+center = true,
+size   = "820 540",
+})
+
+hl.window_rule({
+name   = "accela-float-title",
+match  = { title = "^(ACCELA)$" },
 float  = true,
 center = true,
 size   = "820 540",
@@ -608,7 +626,6 @@ tint_color       = 0xffffff22,
 
 hg.config({
 default_theme  = "light",
-default_preset = "crystal_liquid",
 layers         = { enabled = false },
 })
 
@@ -617,18 +634,13 @@ layers         = { enabled = false },
 -- hg.layer("quickshell:bezel", { preset = "crystal_liquid", mask_threshold = 0.1 })
 end
 
--- Terminal (foot / foot-float): Efeito Crystal Liquid Glass
+-- Terminal (foot / foot-float): 100% Sólido e Preto Simples (Sem HyprGlass / Sem Blur / Máxima Economia)
 hl.window_rule({
-    name     = "terminal-liquid-glass",
+    name     = "terminal-solid",
     match    = { class = "^(foot|foot-float)$" },
-    tag      = "+hyprglass_preset_crystal_liquid",
-    rounding = 20,
-})
-
-hl.window_rule({
-    name  = "terminal-liquid-light",
-    match = { class = "^(foot|foot-float)$" },
-    tag   = "+hyprglass_theme_light",
+    tag      = "+hyprglass_disabled",
+    opacity  = "1.0 1.0",
+    rounding = 10,
 })
 
 -- File Manager (Thunar): Efeito Crystal Liquid Glass

@@ -8,6 +8,10 @@ PIPE=/tmp/qs-island-fifo
 DAEMON_PATH="$HOME/.config/quickshell/launcher"
 CMD="${1:-toggle}"
 
+if [ "$1" = "layout" ]; then
+    CMD="layout:${2:-next}"
+fi
+
 [ -p "$PIPE" ] || mkfifo "$PIPE"
 
 # Garante que NUNCA existam duas instâncias de quickshell rodando simultaneamente

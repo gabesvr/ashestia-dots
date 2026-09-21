@@ -54,7 +54,7 @@ Item {
     // ── Processo de Listagem ──────────────────────────────────
     Process {
         id: btLister
-        command: ["/home/gabriel/.config/quickshell/scripts/bt_tool.py", "list"]
+        command: ["/home/gabriel/.config/quickshell/scripts/bt_tool.sh", "list"]
         running: false
         stdout: SplitParser {
             onRead: (line) => {
@@ -111,7 +111,7 @@ Item {
             root.toggleBt()
         }
         root.isScanning = true
-        btAction.command = ["/home/gabriel/.config/quickshell/scripts/bt_tool.py", "scan", "5"]
+        btAction.command = ["/home/gabriel/.config/quickshell/scripts/bt_tool.sh", "scan", "5"]
         btAction.running = true
     }
 
@@ -119,31 +119,31 @@ Item {
         const nextState = !root.isBtEnabled
         root.isBtEnabled = nextState
         root.controlCenter.isBtOn = nextState
-        btAction.command = ["/home/gabriel/.config/quickshell/scripts/bt_tool.py", "toggle", nextState ? "on" : "off"]
+        btAction.command = ["/home/gabriel/.config/quickshell/scripts/bt_tool.sh", "toggle", nextState ? "on" : "off"]
         btAction.running = true
     }
 
     function connect(mac) {
         root.statusMessage = "Conectando..."
-        btAction.command = ["/home/gabriel/.config/quickshell/scripts/bt_tool.py", "connect", mac]
+        btAction.command = ["/home/gabriel/.config/quickshell/scripts/bt_tool.sh", "connect", mac]
         btAction.running = true
     }
 
     function disconnect(mac) {
         root.statusMessage = "Desconectando..."
-        btAction.command = ["/home/gabriel/.config/quickshell/scripts/bt_tool.py", "disconnect", mac]
+        btAction.command = ["/home/gabriel/.config/quickshell/scripts/bt_tool.sh", "disconnect", mac]
         btAction.running = true
     }
 
     function pair(mac) {
         root.statusMessage = "Pareando..."
-        btAction.command = ["/home/gabriel/.config/quickshell/scripts/bt_tool.py", "pair", mac]
+        btAction.command = ["/home/gabriel/.config/quickshell/scripts/bt_tool.sh", "pair", mac]
         btAction.running = true
     }
 
     function remove(mac) {
         root.statusMessage = "Removendo dispositivo..."
-        btAction.command = ["/home/gabriel/.config/quickshell/scripts/bt_tool.py", "remove", mac]
+        btAction.command = ["/home/gabriel/.config/quickshell/scripts/bt_tool.sh", "remove", mac]
         btAction.running = true
     }
 

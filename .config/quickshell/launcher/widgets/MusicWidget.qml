@@ -4,22 +4,12 @@ import Quickshell.Io
 import QtQuick
 import QtQuick.Layouts
 
-PanelWindow {
+Item {
     id: musicWindow
+    anchors.fill: parent
 
-    anchors.top: true
-    anchors.bottom: true
-    anchors.left: true
-    anchors.right: true
-
-    WlrLayershell.layer: WlrLayer.Bottom
-    WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
-    WlrLayershell.exclusiveZone: -1
-    color: "transparent"
-
-    mask: Region {
-        item: full
-    }
+    property alias cardItem: full
+    property alias sharedBackdrop: glass.sharedBackdrop
 
     FontLoader {
         id: sfRegular
@@ -36,6 +26,7 @@ PanelWindow {
 
     // Layout mode: "wide" (default) | "bar" (compact pill) | "tall" (lyrics)
     property string layoutMode: "wide"
+    readonly property bool isLyricsOpen: layoutMode === "tall"
 
     // Media properties
     property string trackTitle: "minor"
@@ -59,6 +50,7 @@ PanelWindow {
     property string lyricsTrackKey: ""
 
     // High-precision MPRIS position sync & sub-second clock
+    property string _lastMediaArtUrl: ""
     property real precisePositionMs: playbackPos * 1000
     property real _lastAnchorRealSec: 0
     property real _lastAnchorSystemTimeMs: 0
@@ -88,6 +80,65 @@ PanelWindow {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    Process {
+        id: mediaFollower
+        command: ["playerctl", "metadata", "--follow", "--format",
+            "{{title}}│{{artist}}│{{mpris:artUrl}}│{{xesam:url}}│{{position}}│{{mpris:length}}│{{status}}│{{playerName}}"
+        ]
+        running: true
+        stdout: SplitParser {
+            onRead: (line) => {
+                try {
+                    const parts = line.trim().split("│");
+                    if (parts.length < 8) return;
+
+                    const title   = parts[0] || "";
+                    const artist  = parts[1] || "";
+                    const artUrl  = parts[2] || "";
+                    const url     = parts[3] || "";
+                    const pos     = parseInt(parts[4]) || 0;
+                    const len     = parseInt(parts[5]) || 0;
+                    const stat    = parts[6] || "Stopped";
+
+                    if (stat !== "Stopped") {
+                        musicWindow.trackTitle = title || "Unknown";
+                        musicWindow.trackArtist = artist || "Unknown Artist";
+
+                        let art = artUrl;
+                        if (!art && url) {
+                            let vid = "";
+                            const rxWatch = url.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+                            if (rxWatch) {
+                                vid = rxWatch[1];
+                            } else {
+                                const rxShort = url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+                                if (rxShort) {
+                                    vid = rxShort[1];
+                                } else {
+                                    const rxEmbed = url.match(/\/(?:embed|shorts|v)\/([a-zA-Z0-9_-]{11})/);
+                                    if (rxEmbed) vid = rxEmbed[1];
+                                }
+                            }
+                            if (vid) {
+                                art = "https://img.youtube.com/vi/" + vid + "/maxresdefault.jpg";
+                            }
+                        }
+
+                        if (art !== musicWindow._lastMediaArtUrl) {
+                            musicWindow._lastMediaArtUrl = art;
+                            musicWindow.trackArtUrl = art;
+                        }
+
+                        musicWindow.playbackLen = len > 0 ? (len / 1000000) : 0;
+                        musicWindow.playerStatus = stat;
+                    } else {
+                        musicWindow.playerStatus = "Stopped";
+                    }
+                } catch (e) {}
             }
         }
     }
@@ -321,13 +372,13 @@ PanelWindow {
         x: musicWindow.targetX
         y: musicWindow.targetY
 
-        width: musicWindow.layoutMode === "tall" ? 280 : 340
-        height: musicWindow.layoutMode === "tall" ? 420 : (musicWindow.layoutMode === "bar" ? 62 : 160)
+        width: musicWindow.targetWidth > 0 ? musicWindow.targetWidth : 340
+        height: musicWindow.layoutMode === "tall" ? 420 : (musicWindow.layoutMode === "bar" ? 62 : (musicWindow.targetHeight > 0 ? musicWindow.targetHeight : 160))
 
-        Behavior on x { NumberAnimation { duration: 700; easing.type: Easing.OutQuint } }
-        Behavior on y { NumberAnimation { duration: 700; easing.type: Easing.OutQuint } }
-        Behavior on width { NumberAnimation { duration: 300; easing.type: Easing.OutQuint } }
-        Behavior on height { NumberAnimation { duration: 300; easing.type: Easing.OutQuint } }
+        Behavior on x { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
+        Behavior on y { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
+        Behavior on width { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
+        Behavior on height { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
 
         // Liquid Glass Background
         LiquidGlass {

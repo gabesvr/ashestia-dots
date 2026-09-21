@@ -1,4 +1,6 @@
 #!/bin/bash
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+export WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-1}"
 WALLPAPER_DIR="$HOME/Pictures/Wallpapers"
 CURRENT_WP_FILE="$HOME/.config/hypr/current_wallpaper"
 COLORS_CACHE="$HOME/.config/quickshell/current_colors.json"
@@ -106,10 +108,16 @@ cmd_set() {
     # 1. Update wallpaper seamlessly with swaybg (launch new on top, then kill older)
     local old_pids
     old_pids=$(pgrep -x swaybg)
-    nohup swaybg -i "$path" -m fill </dev/null >/dev/null 2>&1 &
-    sleep 0.15
+    setsid swaybg -i "$path" -m fill </dev/null >/dev/null 2>&1 &
+    local new_pid=$!
+    disown 2>/dev/null
+    sleep 0.2
     if [ -n "$old_pids" ]; then
-        kill $old_pids 2>/dev/null
+        for p in $old_pids; do
+            if [ "$p" != "$new_pid" ]; then
+                kill "$p" 2>/dev/null
+            fi
+        done
     fi
 
     # 2. Write configs atomically
@@ -134,7 +142,8 @@ cmd_init() {
     wp=$(get_active)
     if [ -n "$wp" ] && [ -f "$wp" ]; then
         pkill -x swaybg 2>/dev/null
-        nohup swaybg -i "$wp" -m fill </dev/null >/dev/null 2>&1 &
+        setsid swaybg -i "$wp" -m fill </dev/null >/dev/null 2>&1 &
+        disown 2>/dev/null
     fi
 }
 
@@ -150,10 +159,74 @@ cmd_random() {
     echo '{"status":"error","message":"No wallpapers found"}'
 }
 
+cmd_next() {
+    if [ ! -d "$WALLPAPER_DIR" ]; then
+        echo '{"status":"error","message":"No wallpapers directory"}'
+        return 1
+    fi
+    local active
+    active=$(get_active)
+    local wps=()
+    while IFS= read -r line; do
+        [ -n "$line" ] && wps+=("$line")
+    done < <(find "$WALLPAPER_DIR" -maxdepth 1 -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.webp" \) | sort)
+
+    local total=${#wps[@]}
+    if [ "$total" -eq 0 ]; then
+        echo '{"status":"error","message":"No wallpapers found"}'
+        return 1
+    fi
+
+    local current_idx=-1
+    for i in "${!wps[@]}"; do
+        if [ "${wps[$i]}" = "$active" ]; then
+            current_idx=$i
+            break
+        fi
+    done
+
+    local next_idx=$(( (current_idx + 1) % total ))
+    local next_wp="${wps[$next_idx]}"
+    cmd_set "$next_wp"
+}
+
+cmd_prev() {
+    if [ ! -d "$WALLPAPER_DIR" ]; then
+        echo '{"status":"error","message":"No wallpapers directory"}'
+        return 1
+    fi
+    local active
+    active=$(get_active)
+    local wps=()
+    while IFS= read -r line; do
+        [ -n "$line" ] && wps+=("$line")
+    done < <(find "$WALLPAPER_DIR" -maxdepth 1 -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.webp" \) | sort)
+
+    local total=${#wps[@]}
+    if [ "$total" -eq 0 ]; then
+        echo '{"status":"error","message":"No wallpapers found"}'
+        return 1
+    fi
+
+    local current_idx=0
+    for i in "${!wps[@]}"; do
+        if [ "${wps[$i]}" = "$active" ]; then
+            current_idx=$i
+            break
+        fi
+    done
+
+    local prev_idx=$(( (current_idx - 1 + total) % total ))
+    local prev_wp="${wps[$prev_idx]}"
+    cmd_set "$prev_wp"
+}
+
 case "$1" in
     init) cmd_init ;;
     list) cmd_list ;;
     set) cmd_set "$2" ;;
+    next) cmd_next ;;
+    prev) cmd_prev ;;
     random) cmd_random ;;
     colors)
         act=$(get_active)
