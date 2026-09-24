@@ -10,9 +10,9 @@ for id in $ids; do
 done
 chk "applyOne aplica variant" "grep -q 'w.variant = p.variant' $L/shell.qml"
 chk "regra hidden p/ widgets fora do layout" "grep -q 'variant: \"hidden\"' $L/shell.qml"
-chk "10 layouts (node)" "node tests/layouts.test.mjs >/dev/null"
-for v in ClockHero ClockBento ClockRing ClockEditorial WeatherLine WeatherNumber WeatherCompact WeatherText MusicPill MusicCover MusicVinyl MusicPoster BatteryBig; do
+chk "3 layouts (node)" "node tests/layouts.test.mjs >/dev/null"
+for v in ClockHero WeatherLine MusicPill; do
   chk "variante $v existe" "[ -f $L/widgets/variants/$v.qml ]"
 done
-chk "atalho layout:10" "grep -q 'layout 10' ~/.config/hypr/hyprland.lua"
+chk "atalho layout:3" "grep -q 'layout 3' ~/.config/hypr/hyprland.lua"
 exit $fail

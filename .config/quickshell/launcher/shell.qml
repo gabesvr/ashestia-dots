@@ -274,7 +274,7 @@ ShellRoot {
 
     // Tiles de hardware só aparecem se existirem nesta máquina (bateria; modo de GPU do system/)
     readonly property var tileKeys: ["wifi", "bt", "turbo"].concat(BatteryService.present ? ["battery"] : [],
-        ["gaming", "dnd", "xwayland", "wallpaper", "theme", "claude", "laptop"], gpuAvailable ? ["gpu"] : [])
+        ["dnd", "wallpaper", "theme", "laptop"], gpuAvailable ? ["gpu"] : [])
 
     readonly property var wideTiles: ["turbo"]                 // ocupam 2 casas (chave de 3 posições)
 
@@ -368,9 +368,9 @@ ShellRoot {
 
     readonly property var widgetMap: ({
         clock: desktopClock, calendar: desktopCalendar, weather: desktopWeather, music: desktopMusic,
-        vol: wVol, br: wBr, apps: wApps, wifi: wWifi, bt: wBt, turbo: wTurbo, battery: wBattery, gaming: wGaming,
-        dnd: wDnd, xwayland: wXwayland, wallpaper: wWallpaper, theme: wTheme, claude: wClaude, laptop: wLaptop, gpu: wGpu,
-        cava: wCava, dock: wDock, island: wIsland
+        vol: wVol, br: wBr, wifi: wWifi, bt: wBt, turbo: wTurbo, battery: wBattery,
+        dnd: wDnd, wallpaper: wWallpaper, theme: wTheme, laptop: wLaptop, gpu: wGpu,
+        dock: wDock
     })
 
     property var staggerQueue: []
@@ -587,17 +587,11 @@ ShellRoot {
             Region { item: wTurbo.cardItem }
             Region { item: wBattery.cardItem }
             Region { item: wDock.cardItem }
-            Region { item: wIsland.cardItem }
-            Region { item: wGaming.cardItem }
             Region { item: wDnd.cardItem }
-            Region { item: wXwayland.cardItem }
             Region { item: wWallpaper.cardItem }
-            Region { item: wApps.cardItem }
             Region { item: wTheme.cardItem }
-            Region { item: wClaude.cardItem }
             Region { item: wLaptop.cardItem }
             Region { item: wGpu.cardItem }
-            Region { item: wCava.shown ? wCava.cardItem : null }
             Region { item: xwaylandBannerCard }
         }
 
@@ -785,10 +779,6 @@ ShellRoot {
             id: wDock
             sharedBackdrop: masterBlurredTex
         }
-        IslandWidget {
-            id: wIsland
-            sharedBackdrop: masterBlurredTex
-        }
 
         BatteryTileWidget {
             id: wBattery
@@ -804,11 +794,6 @@ ShellRoot {
             }
         }
 
-        GamingTileWidget {
-            id: wGaming
-            sharedBackdrop: masterBlurredTex
-            onToggleRequested: () => GlassTheme.toggleGaming()
-        }
 
         DndTileWidget {
             id: wDnd
@@ -817,13 +802,6 @@ ShellRoot {
             onToggleRequested: () => shellRoot.toggleDnd()
         }
 
-        XwaylandTileWidget {
-            id: wXwayland
-            sharedBackdrop: masterBlurredTex
-            isXwayland: SystemStatus.xwayland
-            countdown: shellRoot.xwaylandCountdown
-            onToggleRequested: () => shellRoot.toggleXwayland()
-        }
 
         WallpaperTileWidget {
             id: wWallpaper
@@ -846,16 +824,7 @@ ShellRoot {
             sharedBackdrop: masterBlurredTex
         }
 
-        ClaudeTileWidget {
-            id: wClaude
-            sharedBackdrop: masterBlurredTex
-        }
 
-        CavaWidget {
-            id: wCava
-            sharedBackdrop: masterBlurredTex
-            wallpaper: shellRoot.activeWallpaper
-        }
 
         LaptopTileWidget {
             id: wLaptop
@@ -872,11 +841,6 @@ ShellRoot {
             onToggleRequested: () => shellRoot.toggleGpuMode()
         }
 
-        AppsTileWidget {
-            id: wApps
-            sharedBackdrop: masterBlurredTex
-            onOpenLaunchpadRequested: () => launchpad.toggleLaunchpad()
-        }
 
         // ── Xwayland Reboot Countdown Toast OSD Banner ───────────
         Item {

@@ -234,7 +234,7 @@ hl.animation({ leaf = "specialWorkspaceOut", enabled = true, speed = 1, spring =
 
 hl.config({
 input = {
-kb_layout   = "us",
+kb_layout   = "es",
 kb_variant  = "",
 kb_model    = "",
 kb_options  = "",
@@ -374,15 +374,8 @@ hl.bind(mainMod .. " + B",             hl.dsp.exec_cmd(islandMenu .. " mini")) -
 hl.bind(mainMod .. " + N",             hl.dsp.exec_cmd(islandMenu .. " mini")) -- Mini Dynamic Island (alias Notch)
 hl.bind(mainMod .. " + G",             hl.dsp.exec_cmd(islandMenu .. " layout next")) -- Alternar layouts dos Widgets Liquid Glass
 hl.bind(mainMod .. " + ALT + 1",       hl.dsp.exec_cmd(islandMenu .. " layout 1"))    -- Layout 1: Sonoma Flanks
-hl.bind(mainMod .. " + ALT + 2",       hl.dsp.exec_cmd(islandMenu .. " layout 2"))    -- Layout 2: Top Shelf
-hl.bind(mainMod .. " + ALT + 3",       hl.dsp.exec_cmd(islandMenu .. " layout 3"))    -- Layout 3: Smart Sidebar
-hl.bind(mainMod .. " + ALT + 4",       hl.dsp.exec_cmd(islandMenu .. " layout 4"))    -- Layout 4: Four Corners
-hl.bind(mainMod .. " + ALT + 5",       hl.dsp.exec_cmd(islandMenu .. " layout 5"))    -- Layout 5: Creative Studio
-hl.bind(mainMod .. " + ALT + 6",       hl.dsp.exec_cmd(islandMenu .. " layout 6"))    -- Layout 6: Hero Clock
-hl.bind(mainMod .. " + ALT + 7",       hl.dsp.exec_cmd(islandMenu .. " layout 7"))    -- Layout 7: Bento
-hl.bind(mainMod .. " + ALT + 8",       hl.dsp.exec_cmd(islandMenu .. " layout 8"))    -- Layout 8: Orbit
-hl.bind(mainMod .. " + ALT + 9",       hl.dsp.exec_cmd(islandMenu .. " layout 9"))    -- Layout 9: Island
-hl.bind(mainMod .. " + ALT + 0",       hl.dsp.exec_cmd(islandMenu .. " layout 10"))    -- Layout 10: Editorial
+hl.bind(mainMod .. " + ALT + 2",       hl.dsp.exec_cmd(islandMenu .. " layout 2"))    -- Layout 2: Four Corners
+hl.bind(mainMod .. " + ALT + 3",       hl.dsp.exec_cmd(islandMenu .. " layout 3"))    -- Layout 3: Hero Clock
 hl.bind(mainMod .. " + V",             hl.dsp.window.pseudo())
 hl.bind(mainMod .. " + P",             hl.dsp.layout("togglesplit"))
 

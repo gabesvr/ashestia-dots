@@ -61,7 +61,7 @@ Item {
 
     Item {
         id: full
-        opacity: vhost.active || root.variant === "hidden" ? 0 : 1   // clássico some quando uma variante assume ou quando o layout esconde o widget (senão pisca no fade-out)
+        opacity: root.variant === "hidden" ? 0 : 1
         visible: opacity > 0.01
         Behavior on opacity { enabled: !GlassTheme.gaming; NumberAnimation { duration: 200 } }
         x: root.targetX
@@ -322,17 +322,4 @@ Item {
         }
     }
 
-    // Visuais alternativos escolhidos pelo layout (widgets/variants/)
-    VariantHost {
-        id: vhost
-        variant: root.variant
-        sources: ({ big: Qt.resolvedUrl("variants/BatteryBig.qml") })
-        targetX: root.targetX
-        targetY: root.targetY
-        targetWidth: root.targetWidth
-        targetHeight: root.targetHeight
-        sharedBackdrop: root.sharedBackdrop
-        screenW: root.width > 0 ? root.width : 1920
-        screenH: root.height > 0 ? root.height : 1200
-    }
 }

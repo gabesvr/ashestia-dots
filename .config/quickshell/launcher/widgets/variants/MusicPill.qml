@@ -16,7 +16,6 @@ Item {
         width: v.height - 2 * x; height: width
         radius: width / 2
         artUrl: MusicService.artUrl
-        RotationAnimator on rotation { from: 0; to: 360; duration: 12000; loops: Animation.Infinite; running: MusicService.isPlaying && !GlassTheme.gaming }
     }
     Column {
         anchors.left: art.right

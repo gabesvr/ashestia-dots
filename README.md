@@ -5,18 +5,18 @@
 ![Ashestia Desktop Widgets](assets/screenshots/widgets.png)
 
 <p align="center">
-  <img src="assets/demo/ashestia-demo.gif" alt="Ashestia widgets demo: 10 layouts, widgets changing shape, panels, solid mode" width="820">
+  <img src="assets/demo/ashestia-demo.gif" alt="Ashestia widgets demo: layouts, widgets changing shape, panels, solid mode" width="820">
 </p>
 
-> Full quality video: [`assets/demo/ashestia-demo.mp4`](assets/demo/ashestia-demo.mp4) (all 10 layouts with widgets changing shape, Wi-Fi and Battery panels, solid-mode key).
+> Full quality video: [`assets/demo/ashestia-demo.mp4`](assets/demo/ashestia-demo.mp4) (recorded before the layout cleanup: some layouts in it were removed to save RAM and CPU).
 
 ---
 
 ## Highlights
 
 * **Liquid Glass widgets** rendered by a custom GLSL shader: soft frosted blur, a thin lens refraction near the edges, extra vibrancy and adaptive darkening so white text stays readable over bright wallpapers.
-* **10 adaptive layouts** that recompute from the real screen size (no overlapping, works with fractional scaling) and switch with a staggered "wave" animation.
-* **Widgets that change shape per layout**: in the 5 creative layouts the same widget morphs into a different visual (giant thin clock, round clock with a seconds ring, vinyl record player, magazine-style date, bento cards…) while it flies to its new place. Only the active variant is kept in memory.
+* **3 adaptive layouts** that recompute from the real screen size (no overlapping, works with fractional scaling) and switch with a staggered "wave" animation. Kept lean on purpose: fewer widgets, no always-running visualizer, no spinning covers — less RAM and no constant redraws.
+* **Widgets that change shape per layout**: in Hero Clock the clock becomes a giant thin clock, the weather a one-line pill, the player a pill and the tiles round icons in a dock. Only the active variant is kept in memory.
 * **Spring animations** everywhere: widgets move with a slight overshoot, panels grow and settle like on macOS. Hyprland windows, workspaces and layers use spring curves too.
 * **Solid mode key**: an animated macOS-style switch tile turns every widget from glass into a flat dark gray surface (`#2b2d33`, same color as the terminal). The change ripples out from the switch.
 * **Expandable panels** for Wi-Fi, Bluetooth, Battery and Wallpapers with clean SF-style iconography, signal bars, iOS-style switches and inline password entry. Wi-Fi really rescans and connects to saved networks in one click.
@@ -30,19 +30,12 @@
 
 ## Layouts
 
-| | |
-| :---: | :---: |
-| ![Sonoma Flanks](assets/screenshots/layout-1-sonoma-flanks.jpg)<br>**1. Sonoma Flanks** | ![Top Shelf](assets/screenshots/layout-2-top-shelf.jpg)<br>**2. Top Shelf** |
-| ![Smart Sidebar](assets/screenshots/layout-3-smart-sidebar.jpg)<br>**3. Smart Sidebar** | ![Four Corners](assets/screenshots/layout-4-four-corners.jpg)<br>**4. Four Corners** |
-| ![Creative Studio](assets/screenshots/layout-5-creative-studio.jpg)<br>**5. Creative Studio** | ![Lyrics panel](assets/screenshots/lyrics-panel.jpg)<br>**Synced lyrics panel** |
+| | | |
+| :---: | :---: | :---: |
+| ![Sonoma Flanks](assets/screenshots/layout-1-sonoma-flanks.jpg)<br>**1. Sonoma Flanks** | ![Four Corners](assets/screenshots/layout-2-four-corners.jpg)<br>**2. Four Corners** | ![Hero Clock](assets/screenshots/layout-3-hero-clock.jpg)<br>**3. Hero Clock** — giant thin clock, one-line weather, pill player, round-tile dock |
 
-### Creative layouts (widgets change shape)
-
-| | |
-| :---: | :---: |
-| ![Hero Clock](assets/screenshots/layout-6-hero-clock.jpg)<br>**6. Hero Clock** — giant thin clock, one-line weather, pill player, round-tile dock | ![Bento](assets/screenshots/layout-7-bento.jpg)<br>**7. Bento** — boxes of different sizes with big numbers and a large cover |
-| ![Orbit](assets/screenshots/layout-8-orbit.jpg)<br>**8. Orbit** — round glass clock with a seconds ring, tiles in orbit, spinning vinyl | ![Island](assets/screenshots/layout-9-island.jpg)<br>**9. Island** — everything in a dark island that expands on hover, thin tile rail |
-| ![Editorial](assets/screenshots/layout-10-editorial.jpg)<br>**10. Editorial** — magazine cover: huge serif date, thin temperature, album poster | |
+![Lyrics panel](assets/screenshots/lyrics-panel.jpg)
+**Synced lyrics panel**
 
 ### Solid mode (the key tile)
 
@@ -63,7 +56,7 @@
 * **Terminal:** foot / footclient (instant startup via systemd daemon, flat `#2b2d33` background)
 * **Color Palette:** Matugen (dynamic colors generated from the wallpaper)
 * **Terminal Fetch:** minimal Fastfetch with the Claude mascot
-* **Audio Visualizer:** Cava
+* **Audio Visualizer:** Cava (in the terminal)
 * **Notifications:** Mako
 
 ---
@@ -72,14 +65,14 @@
 
 * **Clock Widget:** digital clock with localized timezone offset and tick ring.
 * **Calendar Widget:** full-month calendar with active day highlight.
-* **Quick Controls & Sliders:** volume and brightness sliders plus tiles: Wi-Fi, Bluetooth, Battery, App drawer, the 3-position power switch, Gaming mode, Do Not Disturb, Xwayland toggle, Wallpaper picker, laptop/HDMI monitor mode, GPU mode, Claude and the **solid-mode switch**.
+* **Quick Controls & Sliders:** volume and brightness sliders plus tiles: Wi-Fi, Bluetooth, Battery, the 3-position power switch, Do Not Disturb, Wallpaper picker, laptop/HDMI monitor mode, GPU mode and the **solid-mode switch**. The app drawer and Gaming mode stay on their shortcuts.
 * **Weather Widget:** live weather from Open-Meteo (current conditions, hourly forecast, 5-day outlook).
 * **Music Widget:** real-time player with sub-second Spotify sync, album art and an interactive synced lyrics view.
 
 ### Controlling the shell (FIFO)
 
 ```bash
-echo layout:4   > /tmp/qs-island-fifo   # switch layout (1-10 or "next")
+echo layout:2   > /tmp/qs-island-fifo   # switch layout (1-3 or "next")
 echo theme      > /tmp/qs-island-fifo   # toggle solid mode
 echo wifi       > /tmp/qs-island-fifo   # open/close the Wi-Fi panel
 echo bt         > /tmp/qs-island-fifo   # open/close the Bluetooth panel
@@ -100,7 +93,7 @@ echo wallpaper:panel > /tmp/qs-island-fifo   # open/close the wallpaper gallery
 
 ## Installation
 
-Requirements: `hyprland`, `quickshell`, `foot`, `fish`, `matugen`, `mako`, `cava`, `playerctl`, `brightnessctl`, `qt6-shadertools` (for `qsb`), `gcc` (helper daemons). Optional: `asusctl`, `power-profiles-daemon`, `gpu-screen-recorder`, `noto-fonts` (serif of the Editorial layout).
+Requirements: `hyprland`, `quickshell`, `foot`, `fish`, `matugen`, `mako`, `cava`, `playerctl`, `brightnessctl`, `qt6-shadertools` (for `qsb`), `gcc` (helper daemons). Optional: `asusctl`, `power-profiles-daemon`, `gpu-screen-recorder`.
 
 The widgets use the SF Pro fonts by family name; `install.sh` installs them to `~/.local/share/fonts`.
 
@@ -135,7 +128,7 @@ systemctl --user restart quickshell
 | `Super + A` / `Super + Space` | App Launchpad |
 | `Super + I` | Control Center Island |
 | `Super + G` | Next widget layout |
-| `Super + Alt + [1-9]` / `Super + Alt + 0` | Jump to widget layout 1–9 / 10 |
+| `Super + Alt + [1-3]` | Jump to widget layout |
 | `Super + Shift + G` | Gaming mode (shell off, no animations, GPU tuned) |
 | `Super + F9` | Start/stop screen recording (`gravar`) |
 | `Super + Shift + S` | Region Screenshot |

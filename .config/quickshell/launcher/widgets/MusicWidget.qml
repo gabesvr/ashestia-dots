@@ -734,7 +734,7 @@ Item {
     VariantHost {
         id: vhost
         variant: musicWindow.variant
-        sources: ({ pill: Qt.resolvedUrl("variants/MusicPill.qml"), cover: Qt.resolvedUrl("variants/MusicCover.qml"), vinyl: Qt.resolvedUrl("variants/MusicVinyl.qml"), poster: Qt.resolvedUrl("variants/MusicPoster.qml") })
+        sources: ({ pill: Qt.resolvedUrl("variants/MusicPill.qml") })
         targetX: musicWindow.targetX
         targetY: musicWindow.targetY
         targetWidth: musicWindow.targetWidth

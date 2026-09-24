@@ -3,10 +3,10 @@
 import fs from "node:fs"; import assert from "node:assert";
 const src = fs.readFileSync(new URL("../launcher/Layouts.js", import.meta.url), "utf8").replace(/^\.pragma library\s*$/m, "");
 const L = new Function(src + "; return { compute, placeTiles, cellsUsed };")();
-const keys = ["wifi","bt","turbo","battery","gaming","dnd","xwayland","wallpaper","theme","claude","laptop","gpu"];
+const keys = ["wifi","bt","turbo","battery","dnd","wallpaper","theme","laptop","gpu"];
 for (const [W,H] of [[1280,800],[1536,960],[1920,1080]]) {
   const ls = L.compute(W, H, keys, ["turbo"]);
-  assert.equal(ls.length, 10);
+  assert.equal(ls.length, 3);
   for (const l of ls) {
     const gridKeys = keys.filter(k => !l.pos[k]);
     const t = {}; L.placeTiles(t, l.tiles, gridKeys, ["turbo"]);

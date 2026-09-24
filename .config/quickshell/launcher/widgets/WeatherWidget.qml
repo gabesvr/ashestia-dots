@@ -235,7 +235,7 @@ Item {
     VariantHost {
         id: vhost
         variant: weatherWindow.variant
-        sources: ({ line: Qt.resolvedUrl("variants/WeatherLine.qml"), number: Qt.resolvedUrl("variants/WeatherNumber.qml"), compact: Qt.resolvedUrl("variants/WeatherCompact.qml"), text: Qt.resolvedUrl("variants/WeatherText.qml") })
+        sources: ({ line: Qt.resolvedUrl("variants/WeatherLine.qml") })
         targetX: weatherWindow.targetX
         targetY: weatherWindow.targetY
         targetWidth: weatherWindow.targetWidth

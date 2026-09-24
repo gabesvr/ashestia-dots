@@ -206,7 +206,7 @@ Item {
     VariantHost {
         id: vhost
         variant: clockWindow.variant
-        sources: ({ hero: Qt.resolvedUrl("variants/ClockHero.qml"), bento: Qt.resolvedUrl("variants/ClockBento.qml"), ring: Qt.resolvedUrl("variants/ClockRing.qml"), editorial: Qt.resolvedUrl("variants/ClockEditorial.qml") })
+        sources: ({ hero: Qt.resolvedUrl("variants/ClockHero.qml") })
         targetX: clockWindow.targetX
         targetY: clockWindow.targetY
         targetWidth: clockWindow.targetWidth
