@@ -14,7 +14,7 @@ Item {
 
     Image {
         anchors.fill: parent
-        source: "/home/gabriel/.config/quickshell/assets/weather/" + iconItem.iconSet + "/" + iconItem.iconName + ".png"
+        source: GlassTheme.home + "/.config/quickshell/assets/weather/" + iconItem.iconSet + "/" + iconItem.iconName + ".png"
         fillMode: Image.PreserveAspectFit
         smooth: true
         mipmap: true

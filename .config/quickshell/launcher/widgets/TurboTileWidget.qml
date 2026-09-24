@@ -104,7 +104,7 @@ Item {
                             width: Math.min(18, sw.height * 0.46)
                             height: width
                             // no Equilibrado a bolinha é branca: medidor escuro por cima dela
-                            source: "file:///home/gabriel/.config/quickshell/assets/icons/" + (index === 1 && root.powerMode === 1 ? "gauge-dark.svg" : root.icons[index])
+                            source: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/" + (index === 1 && root.powerMode === 1 ? "gauge-dark.svg" : root.icons[index])
                             sourceSize.width: 48
                             sourceSize.height: 48
                             fillMode: Image.PreserveAspectFit

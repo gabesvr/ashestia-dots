@@ -56,7 +56,7 @@ PanelWindow {
     // ── Bluetooth Lister Process ──
     Process {
         id: btLister
-        command: ["/home/gabriel/.config/quickshell/scripts/bt_tool.sh", "list"]
+        command: [GlassTheme.home + "/.config/quickshell/scripts/bt_tool.sh", "list"]
         running: false
         stdout: SplitParser {
             onRead: (line) => {
@@ -93,13 +93,13 @@ PanelWindow {
 
     function connectDevice(mac) {
         modalWindow.statusMsg = "Connecting to " + mac + "...";
-        btAction.command = ["/home/gabriel/.config/quickshell/scripts/bt_tool.sh", "connect", mac];
+        btAction.command = [GlassTheme.home + "/.config/quickshell/scripts/bt_tool.sh", "connect", mac];
         btAction.running = true;
     }
 
     function disconnectDevice(mac) {
         modalWindow.statusMsg = "Disconnecting " + mac + "...";
-        btAction.command = ["/home/gabriel/.config/quickshell/scripts/bt_tool.sh", "disconnect", mac];
+        btAction.command = [GlassTheme.home + "/.config/quickshell/scripts/bt_tool.sh", "disconnect", mac];
         btAction.running = true;
     }
 
@@ -161,7 +161,7 @@ PanelWindow {
                 Image {
                     anchors.verticalCenter: parent.verticalCenter
                     width: 18; height: 18
-                    source: "file:///home/gabriel/.config/quickshell/assets/icons/bluetooth.svg"
+                    source: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/bluetooth.svg"
                     fillMode: Image.PreserveAspectFit
                 }
 
@@ -188,7 +188,7 @@ PanelWindow {
                     Image {
                         anchors.centerIn: parent
                         width: 12; height: 12
-                        source: "file:///home/gabriel/.config/quickshell/assets/icons/refresh.svg"
+                        source: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/refresh.svg"
                         fillMode: Image.PreserveAspectFit
                         rotation: modalWindow.isScanning ? 360 : 0
                         Behavior on rotation { enabled: !GlassTheme.gaming; NumberAnimation { duration: 800; loops: Animation.Infinite } }
@@ -260,7 +260,7 @@ PanelWindow {
                         Image {
                             anchors.verticalCenter: parent.verticalCenter
                             width: 16; height: 16
-                            source: "file:///home/gabriel/.config/quickshell/assets/icons/bluetooth.svg"
+                            source: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/bluetooth.svg"
                             fillMode: Image.PreserveAspectFit
                         }
 

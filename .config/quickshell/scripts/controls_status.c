@@ -144,7 +144,8 @@ static void get_dnd(bool *dnd) {
 
 static void get_xwayland(bool *xw) {
     *xw = false;
-    const char *path = "/home/gabriel/.config/hypr/xwayland_state";
+    char path[512];
+    snprintf(path, sizeof(path), "%s/.config/hypr/xwayland_state", getenv("HOME") ? getenv("HOME") : "");
     FILE *f = fopen(path, "r");
     if (f) {
         char buf[64];

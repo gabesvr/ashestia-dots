@@ -1,4 +1,5 @@
 import QtQuick
+import "./widgets"
 import QtQuick.Effects
 
 Item {
@@ -19,7 +20,7 @@ Item {
     Image {
         id: img
         anchors.fill: parent
-        source: root.name ? ("file:///home/gabriel/.config/quickshell/assets/icons/" + root.name + ".svg") : ""
+        source: root.name ? ("file://" + GlassTheme.home + "/.config/quickshell/assets/icons/" + root.name + ".svg") : ""
         sourceSize: Qt.size(root.size * 4, root.size * 4)
         fillMode: Image.PreserveAspectFit
         smooth: true

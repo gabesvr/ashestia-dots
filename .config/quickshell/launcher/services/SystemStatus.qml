@@ -1,5 +1,6 @@
 pragma Singleton
 import QtQuick
+import "../widgets"
 import Quickshell
 import Quickshell.Io
 
@@ -22,7 +23,7 @@ Singleton {
 
     Process {
         id: poller
-        command: ["/home/gabriel/.config/quickshell/scripts/controls_status"]
+        command: [GlassTheme.home + "/.config/quickshell/scripts/controls_status"]
         running: true
         onExited: restartTimer.start()
         stdout: SplitParser {

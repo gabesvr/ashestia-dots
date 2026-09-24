@@ -1,3 +1,4 @@
+local HOME = os.getenv("HOME")   -- nada de caminho fixo: roda em qualquer usuário
 -- ============================================================
 -- HYPRLAND CONFIG - FA607NUG | RTX 4050 | Ryzen 7 7445HS
 -- CachyOS | Kernel 7.2.x-cachyos | Zero-latency Gaming Setup
@@ -10,7 +11,7 @@ require("env")
 local terminal    = "foot"
 local browser     = "zen-browser"
 local fileManager = "thunar"
-local islandMenu    = "/home/gabriel/.local/bin/island-toggle"     -- QuickShell Control Center / Island
+local islandMenu    = HOME .. "/.local/bin/island-toggle"     -- QuickShell Control Center / Island
 
 
 ------------------
@@ -82,7 +83,7 @@ hl.exec_cmd("wl-paste --watch cliphist store")
 -- Terminal Foot Server (abertura instantânea com zero cold start e memória compartilhada)
 hl.exec_cmd("foot --server")
 -- Wallpaper daemon ultraleve (swaybg)
-hl.exec_cmd("/home/gabriel/.config/quickshell/scripts/wallpaper_tool.sh init")
+hl.exec_cmd(HOME .. "/.config/quickshell/scripts/wallpaper_tool.sh init")
 -- QuickShell Daemon (Control Center Island - com limites e cgroup via systemd)
 hl.exec_cmd("systemctl --user restart quickshell")
 -- Garantir tema escuro global no portal e apps GTK (WhiteSur Dark - macOS icons)
@@ -127,7 +128,7 @@ render_unfocused_fps         = 30,    -- reduz carga de GPU e alocação de buff
 -- Direct scanout: ativado (1) para enviar buffers diretamente ao display em fullscreen (zero latency e max FPS)
 -- Estado do Xwayland (controlado pelo Switch Apple no Control Center)
 local xwayland_enabled = true
-local xw_f = io.open("/home/gabriel/.config/hypr/xwayland_state", "r")
+local xw_f = io.open(HOME .. "/.config/hypr/xwayland_state", "r")
 if xw_f then
     local content = xw_f:read("*all") or ""
     xw_f:close()
@@ -311,7 +312,7 @@ fingers   = 4,
 direction = "down",
 action    = {
 finish = function()
-hl.exec_cmd("/home/gabriel/.local/bin/island-toggle")
+hl.exec_cmd(HOME .. "/.local/bin/island-toggle")
 end
 }
 })
@@ -320,7 +321,7 @@ fingers   = 4,
 direction = "up",
 action    = {
 finish = function()
-hl.exec_cmd("/home/gabriel/.local/bin/island-toggle")
+hl.exec_cmd(HOME .. "/.local/bin/island-toggle")
 end
 }
 })
@@ -386,15 +387,15 @@ hl.bind(mainMod .. " + V",             hl.dsp.window.pseudo())
 hl.bind(mainMod .. " + P",             hl.dsp.layout("togglesplit"))
 
 -- Screenshot — grim + slurp + wl-copy (salva arquivo E copia pro clipboard)
-hl.bind("SUPER + SHIFT + S",  hl.dsp.exec_cmd("/home/gabriel/.local/bin/screenshot region"), { locked = false })
-hl.bind("Print",               hl.dsp.exec_cmd("/home/gabriel/.local/bin/screenshot full"))
-hl.bind("SUPER + Print",       hl.dsp.exec_cmd("/home/gabriel/.local/bin/screenshot window"))
+hl.bind("SUPER + SHIFT + S",  hl.dsp.exec_cmd(HOME .. "/.local/bin/screenshot region"), { locked = false })
+hl.bind("Print",               hl.dsp.exec_cmd(HOME .. "/.local/bin/screenshot full"))
+hl.bind("SUPER + Print",       hl.dsp.exec_cmd(HOME .. "/.local/bin/screenshot window"))
 
 -- Reload config
 hl.bind(mainMod .. " + SHIFT + R",     hl.dsp.exec_cmd("hyprctl reload"))
 
 -- Exit / Shutdown
-hl.bind(mainMod .. " + SHIFT + P",     hl.dsp.exec_cmd("/home/gabriel/.local/bin/island-toggle monitor"))
+hl.bind(mainMod .. " + SHIFT + P",     hl.dsp.exec_cmd(HOME .. "/.local/bin/island-toggle monitor"))
 hl.bind(mainMod .. " + SHIFT + M",     hl.dsp.exec_cmd("command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch exit"))
 
 -- === Navegação de foco: HJKL (vim) + setas ===
@@ -478,7 +479,7 @@ hl.bind(mainMod .. " + SHIFT + COMMA", hl.dsp.window.move({ monitor = "l" }))
 hl.bind(mainMod .. " + SHIFT + PERIOD",hl.dsp.window.move({ monitor = "r" }))
 
 -- === Gravação de tela (GPU Screen Recorder / NVENC — ~/.local/bin/gravar) ===
-hl.bind(mainMod .. " + F9",            hl.dsp.exec_cmd("/home/gabriel/.local/bin/gravar rec"))     -- liga/para gravação
+hl.bind(mainMod .. " + F9",            hl.dsp.exec_cmd(HOME .. "/.local/bin/gravar rec"))     -- liga/para gravação
 
 -- === Scratchpad (SUPER+D / SUPER+SHIFT+D para não conflitar com screenshot) ===
 hl.bind(mainMod .. " + D",             hl.dsp.workspace.toggle_special("magic"))
@@ -510,7 +511,7 @@ hl.bind("XF86AudioPlay",        hl.dsp.exec_cmd("playerctl play-pause"),  { lock
 hl.bind("XF86AudioPrev",        hl.dsp.exec_cmd("playerctl previous"),    { locked = true })
 
 -- === Gaming Mode toggle === (SUPER+G já é usado para alternar layouts dos widgets)
-hl.bind(mainMod .. " + SHIFT + G", hl.dsp.exec_cmd("systemd-run --user --scope --quiet --collect /home/gabriel/.local/bin/gaming-mode toggle")) -- Modo Gaming liga/desliga (desliga o Quickshell)
+hl.bind(mainMod .. " + SHIFT + G", hl.dsp.exec_cmd("systemd-run --user --scope --quiet --collect " .. HOME .. "/.local/bin/gaming-mode toggle")) -- Modo Gaming liga/desliga (desliga o Quickshell)
 
 
 --------------------------------
@@ -732,7 +733,7 @@ hl.window_rule({
 ------------------------
 -- Ligado pelo tile "Gaming" do Quickshell (~/.local/bin/gaming-mode): sem animações,
 -- blur, sombra nem dim — tudo instantâneo. Lido a cada reload.
-local gm_f = io.open("/home/gabriel/.config/hypr/gaming_mode", "r")
+local gm_f = io.open(HOME .. "/.config/hypr/gaming_mode", "r")
 if gm_f then
     local gm = gm_f:read("*all") or ""
     gm_f:close()

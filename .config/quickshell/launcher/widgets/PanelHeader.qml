@@ -82,7 +82,7 @@ Item {
         GlassIconButton {
             visible: hdr.showRefresh
             size: 26
-            iconSource: "file:///home/gabriel/.config/quickshell/assets/icons/refresh.svg"
+            iconSource: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/refresh.svg"
             spinning: hdr.busy
             anchors.verticalCenter: parent.verticalCenter
             onClicked: hdr.refreshClicked()

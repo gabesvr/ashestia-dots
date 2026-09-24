@@ -61,7 +61,7 @@ Item {
 
     FileView {
         id: cavaColors
-        path: "/home/gabriel/.config/cava/config"
+        path: GlassTheme.home + "/.config/cava/config"
         watchChanges: true
         onFileChanged: reload()
         onLoaded: root.parseColors(text())
@@ -86,7 +86,7 @@ Item {
     Process {
         id: cavaProc
         command: ["sh", "-c",
-            "sed 's/^bars = .*/bars = " + root.cavaBars + "/' /home/gabriel/.config/quickshell/cava/widget.conf > " + root.runConf +
+            "sed 's/^bars = .*/bars = " + root.cavaBars + "/' " + GlassTheme.home + "/.config/quickshell/cava/widget.conf > " + root.runConf +
             " && exec cava -p " + root.runConf]
         running: root.active
         stdout: SplitParser {

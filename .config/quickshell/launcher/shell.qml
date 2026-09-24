@@ -17,13 +17,13 @@ ShellRoot {
 
     Process {
         id: monitorModeProc
-        command: ["/home/gabriel/.local/bin/monitor-mode", "status"]
+        command: [GlassTheme.home + "/.local/bin/monitor-mode", "status"]
         running: true
         stdout: SplitParser { onRead: (line) => shellRoot.systemLaptopOnly = (line.trim() === "laptop") }
     }
     function toggleMonitorMode() {
         systemLaptopOnly = !systemLaptopOnly;
-        monitorModeProc.command = ["/home/gabriel/.local/bin/monitor-mode", systemLaptopOnly ? "laptop" : "auto"];
+        monitorModeProc.command = [GlassTheme.home + "/.local/bin/monitor-mode", systemLaptopOnly ? "laptop" : "auto"];
         monitorModeProc.running = false;
         monitorModeProc.running = true;
     }
@@ -77,7 +77,9 @@ ShellRoot {
     function setPowerMode(m) {
         SystemStatus.power = m;
         SystemStatus.powerHoldUntil = Date.now() + 3000;
-        turboProc.command = ["sudo", "-n", "/usr/local/bin/power-mode", ["silent", "balanced", "performance"][m]];
+        // system/power-mode (ASUS: perfil, ventoinha, NVIDIA) se instalado; senão só o power-profiles-daemon
+        const name = ["silent", "balanced", "performance"][m], ppd = ["power-saver", "balanced", "performance"][m];
+        turboProc.command = ["sh", "-c", "if [ -x /usr/local/bin/power-mode ]; then sudo -n /usr/local/bin/power-mode " + name + "; else powerprofilesctl set " + ppd + "; fi"];
         turboProc.running = false;
         turboProc.running = true;
     }
@@ -127,7 +129,7 @@ ShellRoot {
         }
         const next = !SystemStatus.xwayland;
         SystemStatus.xwayland = next;
-        exec("sh -c 'echo " + (next ? "true" : "false") + " > /home/gabriel/.config/hypr/xwayland_state'");
+        exec("sh -c 'echo " + (next ? "true" : "false") + " > " + GlassTheme.home + "/.config/hypr/xwayland_state'");
         shellRoot.xwaylandCountdown = 5;
         shellRoot.xwaylandRestartPending = true;
         xwaylandRebootTimer.start();
@@ -139,7 +141,7 @@ ShellRoot {
         shellRoot.xwaylandRestartPending = false;
         const reverted = !SystemStatus.xwayland;
         SystemStatus.xwayland = reverted;
-        exec("sh -c 'echo " + (reverted ? "true" : "false") + " > /home/gabriel/.config/hypr/xwayland_state'");
+        exec("sh -c 'echo " + (reverted ? "true" : "false") + " > " + GlassTheme.home + "/.config/hypr/xwayland_state'");
     }
 
     function rebootNow() {
@@ -150,6 +152,7 @@ ShellRoot {
     }
 
     // ── GPU (gpu-mode): só NVIDIA <-> só AMD. Troca = firmware + reboot, com contagem e Cancelar ──
+    property bool gpuAvailable: false          // system/gpu-mode instalado (ASUS com MUX)
     property string systemGpuMode: "nvidia"    // modo em uso (gravado no boot pelo igpu-guard)
     property string gpuTarget: ""              // modo pedido durante a contagem
     property int gpuCountdown: 0
@@ -161,6 +164,7 @@ ShellRoot {
         command: ["/usr/local/bin/gpu-mode", "status"]
         running: true
         stdout: SplitParser { onRead: (line) => shellRoot.systemGpuMode = line.trim().split(" ")[0] }
+        onExited: (code) => shellRoot.gpuAvailable = (code === 0)   // sem /usr/local/bin/gpu-mode (outro hardware): o tile some
     }
     Process {
         id: gpuSwitchProc
@@ -204,7 +208,7 @@ ShellRoot {
     }
     function nextWallpaper() {
         wpSwitcher.running = false;
-        wpSwitcher.command = ["bash", "-c", "/home/gabriel/.config/quickshell/scripts/wallpaper_tool.sh next"];
+        wpSwitcher.command = ["bash", "-c", GlassTheme.home + "/.config/quickshell/scripts/wallpaper_tool.sh next"];
         wpSwitcher.running = true;
     }
 
@@ -268,7 +272,9 @@ ShellRoot {
     property int currentLayout: 1
     property bool layoutReady: false
 
-    readonly property var tileKeys: ["wifi", "bt", "turbo", "battery", "gaming", "dnd", "xwayland", "wallpaper", "theme", "claude", "laptop", "gpu"]
+    // Tiles de hardware só aparecem se existirem nesta máquina (bateria; modo de GPU do system/)
+    readonly property var tileKeys: ["wifi", "bt", "turbo"].concat(BatteryService.present ? ["battery"] : [],
+        ["gaming", "dnd", "xwayland", "wallpaper", "theme", "claude", "laptop"], gpuAvailable ? ["gpu"] : [])
 
     readonly property var wideTiles: ["turbo"]                 // ocupam 2 casas (chave de 3 posições)
 
@@ -281,6 +287,7 @@ ShellRoot {
         onTriggered: shellRoot.applyLayout(shellRoot.currentLayout)
     }
 
+    onTileKeysChanged: if (layoutReady) applyLayout(currentLayout)   // tile de GPU/bateria apareceu ou sumiu
     readonly property var layouts: Layouts.compute(desktopWindow.width, desktopWindow.height, tileKeys, wideTiles)
 
     function collapseAllExpanded() {
@@ -461,7 +468,7 @@ ShellRoot {
     // Persistence for active layout
     Process {
         id: layoutLoader
-        command: ["cat", "/home/gabriel/.config/quickshell/layout_state.json"]
+        command: ["cat", GlassTheme.home + "/.config/quickshell/layout_state.json"]
         running: true
         stdout: SplitParser {
             onRead: (line) => {
@@ -482,7 +489,7 @@ ShellRoot {
 
     function saveLayoutState(idx) {
         const json = "{\"layout\":" + idx + "}";
-        layoutSaver.command = ["sh", "-c", "echo '" + json + "' > /home/gabriel/.config/quickshell/layout_state.json"];
+        layoutSaver.command = ["sh", "-c", "echo '" + json + "' > " + GlassTheme.home + "/.config/quickshell/layout_state.json"];
         layoutSaver.running = false;   // reinicia: em trocas rápidas a gravação anterior ainda rodava e a nova se perdia
         layoutSaver.running = true;
     }
@@ -512,7 +519,7 @@ ShellRoot {
     // Single centralized inotify wallpaper watcher
     Process {
         id: wpTailWatcher
-        command: ["tail", "-F", "-n", "1", "/home/gabriel/.config/hypr/current_wallpaper"]
+        command: ["tail", "-F", "-n", "1", GlassTheme.home + "/.config/hypr/current_wallpaper"]
         running: true
         stdout: SplitParser {
             onRead: (line) => {
@@ -524,7 +531,7 @@ ShellRoot {
     // Single initial wallpaper loader at startup
     Process {
         id: wpInitLoader
-        command: ["cat", "/home/gabriel/.config/hypr/current_wallpaper"]
+        command: ["cat", GlassTheme.home + "/.config/hypr/current_wallpaper"]
         running: true
         stdout: SplitParser {
             onRead: (line) => {

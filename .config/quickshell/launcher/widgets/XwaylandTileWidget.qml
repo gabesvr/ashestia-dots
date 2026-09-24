@@ -84,7 +84,7 @@ Item {
                     anchors.centerIn: parent
                     width: parent.width * 0.52
                     height: width
-                    source: "file:///home/gabriel/.config/quickshell/assets/icons/xwayland.svg"
+                    source: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/xwayland.svg"
                     fillMode: Image.PreserveAspectFit
                     opacity: root.isPending ? 0.0 : (root.isXwayland ? 1.0 : 0.70)
                     visible: !root.isPending
@@ -124,7 +124,7 @@ Item {
                     Image {
                         anchors.centerIn: parent
                         width: 17; height: 17
-                        source: "file:///home/gabriel/.config/quickshell/assets/icons/xwayland.svg"
+                        source: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/xwayland.svg"
                         fillMode: Image.PreserveAspectFit
                         opacity: root.isPending ? 0.0 : (root.isXwayland ? 1.0 : 0.75)
                         visible: !root.isPending

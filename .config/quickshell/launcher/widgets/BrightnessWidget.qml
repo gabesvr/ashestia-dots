@@ -139,7 +139,7 @@ Item {
                     anchors.bottomMargin: 14
                     anchors.horizontalCenter: parent.horizontalCenter
                     width: 22; height: 22
-                    source: "file:///home/gabriel/.config/quickshell/assets/icons/brightness.svg"
+                    source: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/brightness.svg"
                     fillMode: Image.PreserveAspectFit
                     opacity: (root.brightnessVal < 26) ? 0.95 : 0.0
                     Behavior on opacity { enabled: !GlassTheme.gaming; NumberAnimation { duration: 150 } }
@@ -151,7 +151,7 @@ Item {
                     anchors.bottomMargin: 14
                     anchors.horizontalCenter: parent.horizontalCenter
                     width: 22; height: 22
-                    source: "file:///home/gabriel/.config/quickshell/assets/icons/brightness.svg"
+                    source: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/brightness.svg"
                     fillMode: Image.PreserveAspectFit
                     layer.enabled: true
                     layer.effect: MultiEffect {
@@ -181,7 +181,7 @@ Item {
                     Image {
                         anchors.verticalCenter: parent.verticalCenter
                         width: 15; height: 15
-                        source: "file:///home/gabriel/.config/quickshell/assets/icons/brightness.svg"
+                        source: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/brightness.svg"
                         fillMode: Image.PreserveAspectFit
                         opacity: 0.85
                     }
@@ -257,7 +257,7 @@ Item {
                     Image {
                         anchors.centerIn: parent
                         width: 16; height: 16
-                        source: "file:///home/gabriel/.config/quickshell/assets/icons/brightness.svg"
+                        source: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/brightness.svg"
                         fillMode: Image.PreserveAspectFit
                     }
                 }

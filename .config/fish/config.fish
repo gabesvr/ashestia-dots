@@ -8,7 +8,7 @@ function fish_greeting
 end
 
 # Added by Antigravity CLI installer
-set -gx PATH "/home/gabriel/.local/bin" $PATH
+set -gx PATH "$HOME/.local/bin" $PATH
 alias agy="agy --dangerously-skip-permissions"
 
 # Iniciar Hyprland automaticamente no login do TTY1

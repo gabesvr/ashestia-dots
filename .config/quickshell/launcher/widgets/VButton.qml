@@ -20,7 +20,7 @@ Item {
     Image {
         anchors.centerIn: parent
         width: b.size * 0.5; height: width
-        source: "file:///home/gabriel/.config/quickshell/assets/icons/" + b.icon + ".svg"
+        source: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/" + b.icon + ".svg"
         sourceSize.width: 48; sourceSize.height: 48
     }
     MouseArea { id: ma; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: b.clicked() }

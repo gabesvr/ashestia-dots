@@ -44,7 +44,7 @@ Item {
     function scanNetworks(rescan) {
         if (isScanning) return;
         isScanning = true;
-        scanProc.command = ["/home/gabriel/.config/quickshell/scripts/wifi_tool.sh", "list"].concat(rescan ? ["rescan"] : []);
+        scanProc.command = [GlassTheme.home + "/.config/quickshell/scripts/wifi_tool.sh", "list"].concat(rescan ? ["rescan"] : []);
         scanProc.running = false;
         scanProc.running = true;
     }
@@ -53,7 +53,7 @@ Item {
         if (connectingSsid !== "") return;
         connectingSsid = ssid;
         statusMessage = "Connecting to " + ssid + "...";
-        connectProc.command = ["/home/gabriel/.config/quickshell/scripts/wifi_tool.sh", "connect", ssid];
+        connectProc.command = [GlassTheme.home + "/.config/quickshell/scripts/wifi_tool.sh", "connect", ssid];
         if (password) connectProc.command.push(password);
         connectProc.running = false;
         connectProc.running = true;
@@ -61,7 +61,7 @@ Item {
 
     Process {
         id: scanProc
-        command: ["/home/gabriel/.config/quickshell/scripts/wifi_tool.sh", "list"]
+        command: [GlassTheme.home + "/.config/quickshell/scripts/wifi_tool.sh", "list"]
         running: false
         stdout: SplitParser {
             onRead: (line) => {
@@ -167,7 +167,7 @@ Item {
                     anchors.centerIn: parent
                     width: parent.width * 0.52
                     height: width
-                    source: "file:///home/gabriel/.config/quickshell/assets/icons/wifi.svg"
+                    source: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/wifi.svg"
                     fillMode: Image.PreserveAspectFit
                     opacity: root.isWifiOn ? 1.0 : 0.60
                 }
@@ -201,7 +201,7 @@ Item {
             PanelHeader {
                 id: expHeader
                 width: parent.width
-                iconSource: "file:///home/gabriel/.config/quickshell/assets/icons/wifi.svg"
+                iconSource: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/wifi.svg"
                 title: "Wi-Fi"
                 subtitle: root.statusMessage !== "" ? root.statusMessage
                         : (!root.isWifiOn ? "Off"
@@ -305,7 +305,7 @@ Item {
                         Image {
                             visible: modelData.in_use
                             width: 14; height: 14
-                            source: "file:///home/gabriel/.config/quickshell/assets/icons/check.svg"
+                            source: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/check.svg"
                             sourceSize.width: 32; sourceSize.height: 32
                             fillMode: Image.PreserveAspectFit
                             anchors.verticalCenter: parent.verticalCenter
@@ -314,7 +314,7 @@ Item {
                         Image {
                             visible: !modelData.in_use && modelData.is_locked
                             width: 12; height: 12
-                            source: "file:///home/gabriel/.config/quickshell/assets/icons/lock.svg"
+                            source: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/lock.svg"
                             sourceSize.width: 32; sourceSize.height: 32
                             fillMode: Image.PreserveAspectFit
                             opacity: 0.75

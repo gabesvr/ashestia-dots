@@ -80,14 +80,14 @@ Item {
                 Behavior on rotation { enabled: !GlassTheme.gaming; NumberAnimation { duration: 480; easing.type: Easing.OutBack; easing.overshoot: 1.0 } }
                 Image {
                     anchors.fill: parent
-                    source: "file:///home/gabriel/.config/quickshell/assets/icons/sun-color.svg"
+                    source: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/sun-color.svg"
                     sourceSize.width: 48; sourceSize.height: 48
                     opacity: root.isSolid ? 0 : 1
                     Behavior on opacity { enabled: !GlassTheme.gaming; NumberAnimation { duration: 260 } }
                 }
                 Image {
                     anchors.fill: parent
-                    source: "file:///home/gabriel/.config/quickshell/assets/icons/moon-light.svg"
+                    source: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/moon-light.svg"
                     sourceSize.width: 48; sourceSize.height: 48
                     opacity: root.isSolid ? 1 : 0
                     Behavior on opacity { enabled: !GlassTheme.gaming; NumberAnimation { duration: 260 } }
@@ -138,7 +138,7 @@ Item {
 
                     Image {
                         anchors.fill: parent
-                        source: "file:///home/gabriel/.config/quickshell/assets/icons/sun-color.svg"
+                        source: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/sun-color.svg"
                         sourceSize.width: 48; sourceSize.height: 48
                         opacity: root.isSolid ? 0 : 1
                         scale: root.isSolid ? 0.4 : 1
@@ -147,7 +147,7 @@ Item {
                     }
                     Image {
                         anchors.fill: parent
-                        source: "file:///home/gabriel/.config/quickshell/assets/icons/moon-light.svg"
+                        source: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/moon-light.svg"
                         sourceSize.width: 48; sourceSize.height: 48
                         opacity: root.isSolid ? 1 : 0
                         scale: root.isSolid ? 1 : 0.4

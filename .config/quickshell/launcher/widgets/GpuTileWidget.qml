@@ -79,7 +79,7 @@ Item {
                 anchors.centerIn: parent
                 width: parent.width * 0.56
                 height: width
-                source: root.amdMode ? "file:///home/gabriel/.config/quickshell/assets/icons/leaf.svg" : "file:///home/gabriel/.config/quickshell/assets/icons/gpu.svg"
+                source: root.amdMode ? "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/leaf.svg" : "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/gpu.svg"
                 sourceSize.width: 48
                 sourceSize.height: 48
                 fillMode: Image.PreserveAspectFit

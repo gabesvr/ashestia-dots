@@ -46,7 +46,7 @@ Item {
 
     Process {
         id: wpListProc
-        command: ["/home/gabriel/.config/quickshell/scripts/wallpaper_tool.sh", "list"]
+        command: [GlassTheme.home + "/.config/quickshell/scripts/wallpaper_tool.sh", "list"]
         running: false
         stdout: SplitParser {
             onRead: (line) => {
@@ -74,7 +74,7 @@ Item {
     function selectWallpaper(path) {
         root.activeWallpaperPath = path;
         wpSetProc.running = false;
-        wpSetProc.command = ["/home/gabriel/.config/quickshell/scripts/wallpaper_tool.sh", "set", path];
+        wpSetProc.command = [GlassTheme.home + "/.config/quickshell/scripts/wallpaper_tool.sh", "set", path];
         wpSetProc.running = true;
         root.wallpaperSelected(path);
     }
@@ -141,7 +141,7 @@ Item {
                     anchors.centerIn: parent
                     width: parent.width * 0.52
                     height: width
-                    source: "file:///home/gabriel/.config/quickshell/assets/icons/wallpaper.svg"
+                    source: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/wallpaper.svg"
                     fillMode: Image.PreserveAspectFit
                     opacity: 0.85
                 }
@@ -169,7 +169,7 @@ Item {
                     Image {
                         anchors.centerIn: parent
                         width: 17; height: 17
-                        source: "file:///home/gabriel/.config/quickshell/assets/icons/wallpaper.svg"
+                        source: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/wallpaper.svg"
                         fillMode: Image.PreserveAspectFit
                         opacity: 0.85
                     }
@@ -213,7 +213,7 @@ Item {
             PanelHeader {
                 id: wpHeader
                 width: parent.width
-                iconSource: "file:///home/gabriel/.config/quickshell/assets/icons/wallpaper.svg"
+                iconSource: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/wallpaper.svg"
                 accent: "#af52de"
                 title: "Wallpapers"
                 subtitle: root.isLoading ? "Loading…" : (root.wallpaperList.length + " images")
@@ -289,7 +289,7 @@ Item {
                             Image {
                                 anchors.centerIn: parent
                                 width: 10; height: 10
-                                source: "file:///home/gabriel/.config/quickshell/assets/icons/check.svg"
+                                source: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/check.svg"
                                 sourceSize.width: 32; sourceSize.height: 32
                                 fillMode: Image.PreserveAspectFit
                             }

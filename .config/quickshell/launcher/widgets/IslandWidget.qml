@@ -138,7 +138,7 @@ Item {
         width: 34; height: 34
         scale: ibm.pressed ? 0.88 : 1
         Rectangle { anchors.fill: parent; radius: 17; color: ibm.containsMouse ? Qt.rgba(1, 1, 1, 0.16) : "transparent" }
-        Image { anchors.centerIn: parent; width: 17; height: 17; source: "file:///home/gabriel/.config/quickshell/assets/icons/" + ib.icon + ".svg"; sourceSize.width: 48; sourceSize.height: 48 }
+        Image { anchors.centerIn: parent; width: 17; height: 17; source: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/" + ib.icon + ".svg"; sourceSize.width: 48; sourceSize.height: 48 }
         MouseArea { id: ibm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: ib.clicked() }
     }
 }

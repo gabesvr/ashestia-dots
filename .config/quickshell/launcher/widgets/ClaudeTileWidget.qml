@@ -24,7 +24,7 @@ Item {
     visible: opacity > 0.01
     Behavior on opacity { enabled: !GlassTheme.gaming; NumberAnimation { duration: 260 } }
 
-    readonly property var launchCommand: ["systemd-run", "--user", "--scope", "--quiet", "--collect", "foot", "--app-id=foot-float", "-e", "/home/gabriel/.local/bin/claude"]
+    readonly property var launchCommand: ["systemd-run", "--user", "--scope", "--quiet", "--collect", "foot", "--app-id=foot-float", "-e", GlassTheme.home + "/.local/bin/claude"]
 
     Item {
         id: full
@@ -60,7 +60,7 @@ Item {
             anchors.centerIn: parent
             width: Math.min(parent.width, parent.height) * 0.56
             height: width * 10 / 17
-            source: "file:///home/gabriel/.config/quickshell/assets/icons/claude-crab.svg"
+            source: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/claude-crab.svg"
             sourceSize.width: 136
             sourceSize.height: 80
             fillMode: Image.PreserveAspectFit

@@ -142,7 +142,7 @@ Item {
                 y: ring.y + ring.height * 0.18
                 width: Math.round(ring.width * 0.22)
                 height: width
-                source: "file:///home/gabriel/.config/quickshell/assets/icons/bolt-small.svg"
+                source: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/bolt-small.svg"
                 sourceSize.width: 32
                 sourceSize.height: 32
                 fillMode: Image.PreserveAspectFit
@@ -162,7 +162,7 @@ Item {
             PanelHeader {
                 id: hdr
                 width: parent.width
-                iconSource: "file:///home/gabriel/.config/quickshell/assets/icons/bolt-small.svg"
+                iconSource: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/bolt-small.svg"
                 accent: root.charging ? "#34c759" : "#0a84ff"
                 title: "Bateria"
                 subtitle: root.statusText

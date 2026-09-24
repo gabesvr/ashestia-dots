@@ -8,6 +8,9 @@ import Quickshell.Io
 Singleton {
     id: theme
 
+    // Pasta do usuário (nada de caminho fixo: o rice roda em qualquer $HOME)
+    readonly property string home: Quickshell.env("HOME")
+
     property bool solid: false
     // Ponto de origem da "onda" de transição (centro do botão-chave)
     property real originX: 0
@@ -15,7 +18,7 @@ Singleton {
     // Só anima depois do carregamento inicial (evita animar ao iniciar o shell)
     property bool animate: false
 
-    readonly property string stateFile: "/home/gabriel/.config/quickshell/theme_mode.json"
+    readonly property string stateFile: theme.home + "/.config/quickshell/theme_mode.json"
 
     // Modo gaming (tile "Gaming" / ~/.local/bin/gaming-mode): vidro vira sólido sem shader,
     // animações e cava desligados. Estado no arquivo lido também pelo Hyprland e pelo fish.
@@ -25,7 +28,7 @@ Singleton {
     function toggleGaming() {
         gaming = !gaming;   // resposta imediata; o arquivo confirma logo depois
         gamingProc.command = ["systemd-run", "--user", "--scope", "--quiet", "--collect",
-                              "/home/gabriel/.local/bin/gaming-mode", gaming ? "on" : "off"];
+                              theme.home + "/.local/bin/gaming-mode", gaming ? "on" : "off"];
         gamingProc.running = false;
         gamingProc.running = true;
     }
@@ -37,7 +40,7 @@ Singleton {
 
     FileView {
         id: gamingFile
-        path: "/home/gabriel/.config/hypr/gaming_mode"
+        path: theme.home + "/.config/hypr/gaming_mode"
         watchChanges: true
         printErrors: false
         onFileChanged: reload()

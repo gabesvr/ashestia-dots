@@ -141,7 +141,7 @@ Item {
                     anchors.bottomMargin: 14
                     anchors.horizontalCenter: parent.horizontalCenter
                     width: 22; height: 22
-                    source: root.isMuted ? "file:///home/gabriel/.config/quickshell/assets/icons/volume-mute.svg" : "file:///home/gabriel/.config/quickshell/assets/icons/volume.svg"
+                    source: root.isMuted ? "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/volume-mute.svg" : "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/volume.svg"
                     fillMode: Image.PreserveAspectFit
                     opacity: (root.volumeVal < 0.26 || root.isMuted) ? 0.95 : 0.0
                     Behavior on opacity { enabled: !GlassTheme.gaming; NumberAnimation { duration: 150 } }
@@ -153,7 +153,7 @@ Item {
                     anchors.bottomMargin: 14
                     anchors.horizontalCenter: parent.horizontalCenter
                     width: 22; height: 22
-                    source: root.isMuted ? "file:///home/gabriel/.config/quickshell/assets/icons/volume-mute.svg" : "file:///home/gabriel/.config/quickshell/assets/icons/volume.svg"
+                    source: root.isMuted ? "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/volume-mute.svg" : "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/volume.svg"
                     fillMode: Image.PreserveAspectFit
                     layer.enabled: true
                     layer.effect: MultiEffect {
@@ -183,7 +183,7 @@ Item {
                     Image {
                         anchors.verticalCenter: parent.verticalCenter
                         width: 15; height: 15
-                        source: root.isMuted ? "file:///home/gabriel/.config/quickshell/assets/icons/volume-mute.svg" : "file:///home/gabriel/.config/quickshell/assets/icons/volume.svg"
+                        source: root.isMuted ? "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/volume-mute.svg" : "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/volume.svg"
                         fillMode: Image.PreserveAspectFit
                         opacity: 0.85
                     }
@@ -259,7 +259,7 @@ Item {
                     Image {
                         anchors.centerIn: parent
                         width: 16; height: 16
-                        source: root.isMuted ? "file:///home/gabriel/.config/quickshell/assets/icons/volume-mute.svg" : "file:///home/gabriel/.config/quickshell/assets/icons/volume.svg"
+                        source: root.isMuted ? "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/volume-mute.svg" : "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/volume.svg"
                         fillMode: Image.PreserveAspectFit
                     }
                 }

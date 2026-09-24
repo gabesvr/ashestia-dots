@@ -7,6 +7,7 @@ import "../widgets"
 // Bateria (scripts/battery_tool.sh): um poller só; 5 s normalmente, 2 s com algum painel aberto (fast).
 Singleton {
     id: svc
+    property bool present: true          // false em desktop sem bateria (o tile some)
     property int percent: 0
     property string status: "Unknown"
     readonly property bool charging: status === "Charging"
@@ -20,7 +21,7 @@ Singleton {
     property bool fast: false
 
     function refresh(args) {
-        proc.command = ["/home/gabriel/.config/quickshell/scripts/battery_tool.sh"].concat(args || []);
+        proc.command = [GlassTheme.home + "/.config/quickshell/scripts/battery_tool.sh"].concat(args || []);
         proc.running = false;
         proc.running = true;
     }
@@ -31,12 +32,14 @@ Singleton {
 
     Process {
         id: proc
-        command: ["/home/gabriel/.config/quickshell/scripts/battery_tool.sh"]
+        command: [GlassTheme.home + "/.config/quickshell/scripts/battery_tool.sh"]
         running: true
         stdout: SplitParser {
             onRead: (line) => {
                 try {
                     const d = JSON.parse(line.trim());
+                    svc.present = d.present !== false;
+                    if (!svc.present) return;
                     svc.percent = d.percent;
                     svc.status = d.status;
                     svc.onAc = d.ac;

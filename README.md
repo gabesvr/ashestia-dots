@@ -104,6 +104,8 @@ Requirements: `hyprland`, `quickshell`, `foot`, `fish`, `matugen`, `mako`, `cava
 
 The widgets use the SF Pro fonts by family name; `install.sh` installs them to `~/.local/share/fonts`.
 
+**Other hardware:** nothing is tied to a user name or path. Without a battery the Battery tile hides itself; without `system/gpu-mode` the GPU tile hides itself; without `system/power-mode` the power switch uses `power-profiles-daemon` only. Batteries that report energy (`energy_*`) or charge (`charge_*`) both work.
+
 ```bash
 git clone https://github.com/gabesvr/ashestia-dots.git
 cd ashestia-dots

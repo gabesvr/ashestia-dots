@@ -65,6 +65,17 @@ if [ -d "$SCRIPT_DIR/wallpapers" ]; then
     cp -r "$SCRIPT_DIR/wallpapers/"* "$HOME/Pictures/Wallpapers/"
 fi
 
+# 4b. Arquivos de estado gravados com o caminho do autor (wallpaper atual, cores, matugen) → $HOME deste usuário
+for f in "$CONFIG_DIR/hypr/current_wallpaper" "$CONFIG_DIR/quickshell/current_colors.json" "$CONFIG_DIR/quickshell/theme.json" "$CONFIG_DIR/matugen/config.toml"; do
+    [ -f "$f" ] && sed -i "s|/home/gabriel|$HOME|g" "$f"
+done
+# se o wallpaper apontado não existir, usa o primeiro dos que vieram no repositório
+wp=$(cat "$CONFIG_DIR/hypr/current_wallpaper" 2>/dev/null)
+if [ ! -f "$wp" ]; then
+    first=$(ls "$HOME/Pictures/Wallpapers/"* 2>/dev/null | head -1)
+    [ -n "$first" ] && echo "$first" > "$CONFIG_DIR/hypr/current_wallpaper"
+fi
+
 # 5. Restart QuickShell so the widgets load (systemd user service)
 if command -v systemctl >/dev/null 2>&1; then
     systemctl --user restart quickshell 2>/dev/null || true

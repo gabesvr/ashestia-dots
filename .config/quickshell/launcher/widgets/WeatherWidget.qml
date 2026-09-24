@@ -94,7 +94,7 @@ Item {
                             anchors.verticalCenter: parent.verticalCenter
                             width: Math.round(full.baseFontSize * 0.9)
                             height: width
-                            source: "/home/gabriel/.config/quickshell/assets/icons/location.png"
+                            source: GlassTheme.home + "/.config/quickshell/assets/icons/location.png"
                             opacity: 0.75
                             smooth: true
                         }

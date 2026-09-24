@@ -78,7 +78,7 @@ Item {
                     anchors.centerIn: parent
                     width: parent.width * 0.52
                     height: width
-                    source: "file:///home/gabriel/.config/quickshell/assets/icons/bell.svg"
+                    source: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/bell.svg"
                     fillMode: Image.PreserveAspectFit
                     opacity: root.isDnd ? 1.0 : 0.70
                     Behavior on opacity { enabled: !GlassTheme.gaming; NumberAnimation { duration: 180 } }
@@ -107,7 +107,7 @@ Item {
                     Image {
                         anchors.centerIn: parent
                         width: 17; height: 17
-                        source: "file:///home/gabriel/.config/quickshell/assets/icons/bell.svg"
+                        source: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/bell.svg"
                         fillMode: Image.PreserveAspectFit
                         opacity: root.isDnd ? 1.0 : 0.75
                     }

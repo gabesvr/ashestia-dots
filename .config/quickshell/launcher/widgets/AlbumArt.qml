@@ -19,7 +19,7 @@ Item {
     Image {
         id: coverImage
         anchors.fill: parent
-        source: art.artUrl && art.artUrl.length > 0 ? art.artUrl : "/home/gabriel/.config/quickshell/assets/icons/music_widget/no_album.png"
+        source: art.artUrl && art.artUrl.length > 0 ? art.artUrl : GlassTheme.home + "/.config/quickshell/assets/icons/music_widget/no_album.png"
         sourceSize.width: 256
         sourceSize.height: 256
         asynchronous: true

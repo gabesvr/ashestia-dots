@@ -77,7 +77,7 @@ Item {
                     Image {
                         anchors.centerIn: parent
                         width: 16; height: 16
-                        source: "file:///home/gabriel/.config/quickshell/assets/icons/apps.svg"
+                        source: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/apps.svg"
                         fillMode: Image.PreserveAspectFit
                         opacity: 0.90
                     }
@@ -115,7 +115,7 @@ Item {
                     Image {
                         anchors.centerIn: parent
                         width: 18; height: 18
-                        source: "file:///home/gabriel/.config/quickshell/assets/icons/apps.svg"
+                        source: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/apps.svg"
                         fillMode: Image.PreserveAspectFit
                         opacity: 0.90
                     }
@@ -179,7 +179,7 @@ Item {
                     anchors.centerIn: parent
                     width: parent.width * 0.52
                     height: width
-                    source: "file:///home/gabriel/.config/quickshell/assets/icons/apps.svg"
+                    source: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/apps.svg"
                     fillMode: Image.PreserveAspectFit
                     opacity: 0.90
                 }

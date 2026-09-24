@@ -60,7 +60,7 @@ PanelWindow {
     // ── Wi-Fi Lister Process ──
     Process {
         id: wifiLister
-        command: ["/home/gabriel/.config/quickshell/scripts/wifi_tool.sh", "list"]
+        command: [GlassTheme.home + "/.config/quickshell/scripts/wifi_tool.sh", "list"]
         running: false
         stdout: SplitParser {
             onRead: (line) => {
@@ -98,16 +98,16 @@ PanelWindow {
     function connectNetwork(ssid, pwd) {
         modalWindow.statusMsg = "Connecting to " + ssid + "...";
         if (pwd && pwd.length > 0) {
-            wifiAction.command = ["/home/gabriel/.config/quickshell/scripts/wifi_tool.sh", "connect", ssid, pwd];
+            wifiAction.command = [GlassTheme.home + "/.config/quickshell/scripts/wifi_tool.sh", "connect", ssid, pwd];
         } else {
-            wifiAction.command = ["/home/gabriel/.config/quickshell/scripts/wifi_tool.sh", "connect", ssid];
+            wifiAction.command = [GlassTheme.home + "/.config/quickshell/scripts/wifi_tool.sh", "connect", ssid];
         }
         wifiAction.running = true;
     }
 
     function disconnectNetwork() {
         modalWindow.statusMsg = "Disconnecting...";
-        wifiAction.command = ["/home/gabriel/.config/quickshell/scripts/wifi_tool.sh", "disconnect"];
+        wifiAction.command = [GlassTheme.home + "/.config/quickshell/scripts/wifi_tool.sh", "disconnect"];
         wifiAction.running = true;
     }
 
@@ -169,7 +169,7 @@ PanelWindow {
                 Image {
                     anchors.verticalCenter: parent.verticalCenter
                     width: 18; height: 18
-                    source: "file:///home/gabriel/.config/quickshell/assets/icons/wifi.svg"
+                    source: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/wifi.svg"
                     fillMode: Image.PreserveAspectFit
                 }
 
@@ -196,7 +196,7 @@ PanelWindow {
                     Image {
                         anchors.centerIn: parent
                         width: 12; height: 12
-                        source: "file:///home/gabriel/.config/quickshell/assets/icons/refresh.svg"
+                        source: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/refresh.svg"
                         fillMode: Image.PreserveAspectFit
                         rotation: modalWindow.isScanning ? 360 : 0
                         Behavior on rotation { enabled: !GlassTheme.gaming; NumberAnimation { duration: 800; loops: Animation.Infinite } }
@@ -273,7 +273,7 @@ PanelWindow {
                             Image {
                                 anchors.verticalCenter: parent.verticalCenter
                                 width: 15; height: 15
-                                source: "file:///home/gabriel/.config/quickshell/assets/icons/wifi.svg"
+                                source: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/wifi.svg"
                                 fillMode: Image.PreserveAspectFit
                             }
 
@@ -306,7 +306,7 @@ PanelWindow {
                                 visible: modelData.is_locked
                                 anchors.verticalCenter: parent.verticalCenter
                                 width: 12; height: 12
-                                source: "file:///home/gabriel/.config/quickshell/assets/icons/lock.svg"
+                                source: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/lock.svg"
                                 fillMode: Image.PreserveAspectFit
                                 opacity: 0.6
                             }

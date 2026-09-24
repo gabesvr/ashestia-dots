@@ -3,6 +3,7 @@ import Quickshell.Wayland
 import Quickshell.Hyprland
 import Quickshell.Io
 import QtQuick
+import "./widgets"
 import QtQuick.Controls
 import QtQuick.Layouts
 
@@ -40,7 +41,7 @@ PanelWindow {
     // ── Carregamento Ultrarrápido de Aplicativos via apps_tool (C nativo) ──
     Process {
         id: appsLister
-        command: ["/home/gabriel/.config/quickshell/scripts/apps_tool", "list"]
+        command: [GlassTheme.home + "/.config/quickshell/scripts/apps_tool", "list"]
         running: false
         stdout: SplitParser {
             onRead: (line) => {
@@ -124,7 +125,7 @@ PanelWindow {
         console.log("[LAUNCHPAD] Launching app target:", target, "fallback:", fallback);
 
         // Dispara através do apps_tool otimizado com Hyprland e double-fork
-        appLauncher.command = ["/home/gabriel/.config/quickshell/scripts/apps_tool", "launch", target, fallback];
+        appLauncher.command = [GlassTheme.home + "/.config/quickshell/scripts/apps_tool", "launch", target, fallback];
         appLauncher.running = false;
         appLauncher.running = true;
 

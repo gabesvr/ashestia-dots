@@ -72,7 +72,7 @@ Item {
                 anchors.centerIn: parent
                 width: parent.width * 0.56
                 height: width
-                source: root.laptopOnly ? "file:///home/gabriel/.config/quickshell/assets/icons/laptop.svg" : "file:///home/gabriel/.config/quickshell/assets/icons/monitor.svg"
+                source: root.laptopOnly ? "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/laptop.svg" : "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/monitor.svg"
                 sourceSize.width: 48
                 sourceSize.height: 48
                 fillMode: Image.PreserveAspectFit

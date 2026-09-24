@@ -47,14 +47,14 @@ Item {
 
     function toggleDevice(mac, isConnected) {
         statusMessage = (isConnected ? "Disconnecting..." : "Connecting...");
-        actionProc.command = ["/home/gabriel/.config/quickshell/scripts/bt_tool.sh", isConnected ? "disconnect" : "connect", mac];
+        actionProc.command = [GlassTheme.home + "/.config/quickshell/scripts/bt_tool.sh", isConnected ? "disconnect" : "connect", mac];
         actionProc.running = false;
         actionProc.running = true;
     }
 
     Process {
         id: scanProc
-        command: ["/home/gabriel/.config/quickshell/scripts/bt_tool.sh", "list"]
+        command: [GlassTheme.home + "/.config/quickshell/scripts/bt_tool.sh", "list"]
         running: false
         stdout: SplitParser {
             onRead: (line) => {
@@ -142,7 +142,7 @@ Item {
                     anchors.centerIn: parent
                     width: parent.width * 0.52
                     height: width
-                    source: "file:///home/gabriel/.config/quickshell/assets/icons/bluetooth.svg"
+                    source: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/bluetooth.svg"
                     fillMode: Image.PreserveAspectFit
                     opacity: root.isBtOn ? 1.0 : 0.60
                 }
@@ -176,7 +176,7 @@ Item {
             PanelHeader {
                 id: expHeader
                 width: parent.width
-                iconSource: "file:///home/gabriel/.config/quickshell/assets/icons/bluetooth.svg"
+                iconSource: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/bluetooth.svg"
                 title: "Bluetooth"
                 subtitle: root.statusMessage !== "" ? root.statusMessage
                         : (!root.isBtOn ? "Off"
@@ -232,7 +232,7 @@ Item {
                         Image {
                             anchors.centerIn: parent
                             width: 14; height: 14
-                            source: "file:///home/gabriel/.config/quickshell/assets/icons/bluetooth.svg"
+                            source: "file://" + GlassTheme.home + "/.config/quickshell/assets/icons/bluetooth.svg"
                             sourceSize.width: 32; sourceSize.height: 32
                             fillMode: Image.PreserveAspectFit
                             opacity: modelData.connected ? 1.0 : 0.85

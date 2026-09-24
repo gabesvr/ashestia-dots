@@ -328,7 +328,7 @@ Item {
                     spacing: 5
 
                     Image {
-                        source: "/home/gabriel/.config/quickshell/assets/icons/music_widget/lyrics.svg"
+                        source: GlassTheme.home + "/.config/quickshell/assets/icons/music_widget/lyrics.svg"
                         width: 14
                         height: 14
                         anchors.verticalCenter: parent.verticalCenter
@@ -445,21 +445,21 @@ Item {
                             spacing: 18
 
                             ControlButton {
-                                iconSource: "/home/gabriel/.config/quickshell/assets/icons/music_widget/previous.svg"
+                                iconSource: GlassTheme.home + "/.config/quickshell/assets/icons/music_widget/previous.svg"
                                 iconSize: 18
                                 onClicked: musicWindow.playPrevious()
                             }
 
                             ControlButton {
                                 iconSource: musicWindow.isPlaying
-                                    ? "/home/gabriel/.config/quickshell/assets/icons/music_widget/pause.svg"
-                                    : "/home/gabriel/.config/quickshell/assets/icons/music_widget/play.svg"
+                                    ? GlassTheme.home + "/.config/quickshell/assets/icons/music_widget/pause.svg"
+                                    : GlassTheme.home + "/.config/quickshell/assets/icons/music_widget/play.svg"
                                 iconSize: 22
                                 onClicked: musicWindow.togglePlay()
                             }
 
                             ControlButton {
-                                iconSource: "/home/gabriel/.config/quickshell/assets/icons/music_widget/next.svg"
+                                iconSource: GlassTheme.home + "/.config/quickshell/assets/icons/music_widget/next.svg"
                                 iconSize: 18
                                 onClicked: musicWindow.playNext()
                             }
@@ -577,21 +577,21 @@ Item {
                 spacing: 12
 
                 ControlButton {
-                    iconSource: "/home/gabriel/.config/quickshell/assets/icons/music_widget/previous.svg"
+                    iconSource: GlassTheme.home + "/.config/quickshell/assets/icons/music_widget/previous.svg"
                     iconSize: 15
                     onClicked: musicWindow.playPrevious()
                 }
 
                 ControlButton {
                     iconSource: musicWindow.isPlaying
-                        ? "/home/gabriel/.config/quickshell/assets/icons/music_widget/pause.svg"
-                        : "/home/gabriel/.config/quickshell/assets/icons/music_widget/play.svg"
+                        ? GlassTheme.home + "/.config/quickshell/assets/icons/music_widget/pause.svg"
+                        : GlassTheme.home + "/.config/quickshell/assets/icons/music_widget/play.svg"
                     iconSize: 18
                     onClicked: musicWindow.togglePlay()
                 }
 
                 ControlButton {
-                    iconSource: "/home/gabriel/.config/quickshell/assets/icons/music_widget/next.svg"
+                    iconSource: GlassTheme.home + "/.config/quickshell/assets/icons/music_widget/next.svg"
                     iconSize: 15
                     onClicked: musicWindow.playNext()
                 }
@@ -647,7 +647,7 @@ Item {
                         spacing: 4
 
                         Image {
-                            source: "/home/gabriel/.config/quickshell/assets/icons/music_widget/lyrics.svg"
+                            source: GlassTheme.home + "/.config/quickshell/assets/icons/music_widget/lyrics.svg"
                             width: 12
                             height: 12
                             anchors.verticalCenter: parent.verticalCenter
@@ -678,21 +678,21 @@ Item {
                     spacing: 22
 
                     ControlButton {
-                        iconSource: "/home/gabriel/.config/quickshell/assets/icons/music_widget/previous.svg"
+                        iconSource: GlassTheme.home + "/.config/quickshell/assets/icons/music_widget/previous.svg"
                         iconSize: 20
                         onClicked: musicWindow.playPrevious()
                     }
 
                     ControlButton {
                         iconSource: musicWindow.isPlaying
-                            ? "/home/gabriel/.config/quickshell/assets/icons/music_widget/pause.svg"
-                            : "/home/gabriel/.config/quickshell/assets/icons/music_widget/play.svg"
+                            ? GlassTheme.home + "/.config/quickshell/assets/icons/music_widget/pause.svg"
+                            : GlassTheme.home + "/.config/quickshell/assets/icons/music_widget/play.svg"
                         iconSize: 26
                         onClicked: musicWindow.togglePlay()
                     }
 
                     ControlButton {
-                        iconSource: "/home/gabriel/.config/quickshell/assets/icons/music_widget/next.svg"
+                        iconSource: GlassTheme.home + "/.config/quickshell/assets/icons/music_widget/next.svg"
                         iconSize: 20
                         onClicked: musicWindow.playNext()
                     }
