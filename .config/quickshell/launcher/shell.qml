@@ -347,6 +347,9 @@ ShellRoot {
             t.cava.hidden = t.cava.height < 40;
             if (t.cava.hidden) t.cava.height = 40;
         }
+        // Painel aberto: empurra para baixo o que ele cobriria (em vez de ficar por cima); o que não couber some
+        if (expKey !== "") Layouts.pushAside(t, expKey, l.g, H - l.m);
+
         // Widgets que o layout não posiciona somem no lugar: compostos (com "shown") via hidden, o resto via variant "hidden"
         for (const k in widgetMap) {
             const w = widgetMap[k];

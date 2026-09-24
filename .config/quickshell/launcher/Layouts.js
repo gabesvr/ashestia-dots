@@ -123,9 +123,10 @@ function compute(W, H, tileKeys, wideTiles) {
                 cava:     box(R, m + 340 + g, 340, 96)
             },
             tiles:  shelfTiles,
-            alt:    fitGrid(m, m + 140 + g + 68 + g, 240, bottom - (m + 140 + g + 68 + g), 72, 12),
-            expand: shelfNarrow ? { x: m, y: shelf2Y } : { x: shelfTilesX, y: m },
-            expandOver: shelfBeside ? undefined : { music: { y: (shelfNarrow ? shelf2Y : m) + 290 + g } },
+            // estreito: o painel abre ao lado do player (espaço livre) e os tiles ficam onde estão
+            alt:    shelfNarrow ? "keep" : fitGrid(m, m + 140 + g + 68 + g, 240, bottom - (m + 140 + g + 68 + g), 72, 12),
+            expand: shelfNarrow ? { x: m + 340 + g, y: shelfMY } : { x: shelfTilesX, y: m },
+            expandOver: (shelfBeside || shelfNarrow) ? undefined : { music: { y: m + 290 + g } },
             lyrics: { music: { x: shelfMX, y: shelfMY, height: 420 }, tiles: "keep" }
         },
 
@@ -230,7 +231,7 @@ function creative(W, H, m, g, tileKeys, wideTiles) {
             },
             tiles: { x: dx + pad, y: dy + pad, cols: cells, size: ts, gap: tg, variant: "circle" },
             alt: "keep",
-            expand: { x: (W - 340) / 2, y: dy - 290 - 14 },
+            expand: { x: (W - 340) / 2, y: cy },   // painel toma o lugar do relógio gigante (clima, player e dock ficam)
             lyrics: { music: { x: music.x, y: music.y, height: music.height }, tiles: "keep" }
         });
     }
@@ -326,9 +327,29 @@ function creative(W, H, m, g, tileKeys, wideTiles) {
             },
             tiles: { x: m, y: H - m - ts, cols: cells, size: ts, gap: tg, variant: "circle" },
             alt: "keep",
-            expand: { x: m, y: H - m - ts - 14 - 290 },
+            expand: { x: Math.round(m + W * 0.5 + g), y: m + 250 + g },   // entre o relógio e o clima; em tela baixa o pôster sai
             lyrics: { music: { x: music.x, y: music.y, height: music.height }, tiles: "keep" }
         });
     }
     return out;
+}
+
+// Painel expandido (Wi-Fi/BT/Bateria/Wallpaper) não fica por cima de nada: o widget que ele cobriria desce para
+// logo abaixo dele se esse espaço estiver livre (e couber na tela); senão some até o painel fechar. Sem cascata
+// (empurrar em cadeia bagunçava layouts inteiros).
+function pushAside(t, panelKey, g, bottom) {
+    const hit = (a, b) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+    const p = t[panelKey];
+    const live = k => k !== panelKey && !t[k].hidden && t[k].variant !== "hidden" && t[k].width > 0 && t[k].height > 0;
+    const covered = Object.keys(t).filter(k => live(k) && hit(t[k], p));
+    const movedDown = [];
+    for (const k of covered.sort((a, b) => t[a].y - t[b].y)) {
+        const r = t[k];
+        const moved = Object.assign({}, r, { y: p.y + p.height + g });
+        const free = moved.y + moved.height <= bottom
+            && Object.keys(t).every(o => o === k || !live(o) || covered.indexOf(o) >= 0 || !hit(moved, t[o]))
+            && movedDown.every(m => !hit(moved, m));
+        if (free) { r.y = moved.y; movedDown.push(r); }
+        else { r.variant = "hidden"; r.hidden = true; }
+    }
 }
