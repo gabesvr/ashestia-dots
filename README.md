@@ -5,10 +5,10 @@
 ![Ashestia Desktop Widgets](assets/screenshots/widgets.png)
 
 <p align="center">
-  <img src="assets/demo/ashestia-demo.gif" alt="Ashestia widgets demo: layouts, solid mode, panels" width="820">
+  <img src="assets/demo/ashestia-demo.gif" alt="Ashestia widgets demo: 10 layouts, widgets changing shape, panels, solid mode" width="820">
 </p>
 
-> Full quality video: [`assets/demo/ashestia-demo.mp4`](assets/demo/ashestia-demo.mp4) (layout switching, solid-mode key, expanding panels, synced lyrics).
+> Full quality video: [`assets/demo/ashestia-demo.mp4`](assets/demo/ashestia-demo.mp4) (all 10 layouts with widgets changing shape, Wi-Fi and Battery panels, solid-mode key).
 
 ---
 
