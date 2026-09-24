@@ -27,4 +27,6 @@ sudo systemctl daemon-reload && sudo systemctl enable igpu-guard.service
 sudo mkinitcpio -P
 ```
 
+**Brightness in AMD mode:** add the kernel parameter `acpi_backlight=native` (systemd-boot: `LINUX_OPTIONS` in `/etc/sdboot-manage.conf` and the `options` line of `/boot/loader/entries/*.conf`). Without it the kernel picks the firmware backlight (`nvidia_wmi_ec_backlight`), which does nothing once the AMD GPU drives the panel, and `amdgpu` never creates `amdgpu_bl*`. In NVIDIA mode it keeps using `nvidia_0` as before.
+
 **Recovery:** if the screen stays black after a GPU switch, open a TTY (Ctrl+Alt+F3) and run `sudo gpu-mode nvidia`.
