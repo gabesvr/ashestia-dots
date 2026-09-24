@@ -38,6 +38,14 @@ Item {
         }
     }
 
+    // Letra nova carregada / painel reaberto / redimensionado → recentraliza na linha atual
+    function recenter() {
+        if (!_isUserScrolling && lyricsList.count > 0) lyricsList.positionViewAtIndex(_currentIndex, ListView.Center);
+    }
+    onSyncedLyricsChanged: { _previousIndex = -1; Qt.callLater(recenter); }
+    onVisibleChanged: if (visible) Qt.callLater(recenter)
+    onHeightChanged: Qt.callLater(recenter)
+
     Timer {
         id: snapBackTimer
         interval: 2500
@@ -84,7 +92,7 @@ Item {
                 height: parent.height
                 scale: del._isActive ? lv.activeScale : 1.0
                 transformOrigin: Item.Left
-                Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutCubic } }
+                Behavior on scale { enabled: !GlassTheme.gaming; NumberAnimation { duration: 250; easing.type: Easing.OutCubic } }
 
 
                 Text {
@@ -104,7 +112,7 @@ Item {
             }
 
             opacity: _targetOpacity
-            Behavior on opacity { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
+            Behavior on opacity { enabled: !GlassTheme.gaming; NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
 
             MouseArea {
                 anchors.fill: parent

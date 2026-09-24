@@ -52,10 +52,6 @@ PanelWindow {
         glass.setWallpaper(path);
     }
 
-    FontLoader {
-        id: sfRegular
-        source: Qt.resolvedUrl("fonts/sf_pro_display_regular.otf")
-    }
 
     // ── Bluetooth Lister Process ──
     Process {
@@ -112,7 +108,7 @@ PanelWindow {
         anchors.fill: parent
         color: "#000000"
         opacity: modalWindow.shown ? 0.35 : 0.0
-        Behavior on opacity { NumberAnimation { duration: 250; easing.type: Easing.OutQuad } }
+        Behavior on opacity { enabled: !GlassTheme.gaming; NumberAnimation { duration: 250; easing.type: Easing.OutQuad } }
 
         MouseArea {
             anchors.fill: parent
@@ -129,8 +125,8 @@ PanelWindow {
 
         opacity: modalWindow.shown ? 1.0 : 0.0
         scale: modalWindow.shown ? 1.0 : 0.90
-        Behavior on opacity { NumberAnimation { duration: 250; easing.type: Easing.OutCubic } }
-        Behavior on scale { NumberAnimation { duration: 300; easing.type: Easing.OutBack; easing.overshoot: 1.2 } }
+        Behavior on opacity { enabled: !GlassTheme.gaming; NumberAnimation { duration: 250; easing.type: Easing.OutCubic } }
+        Behavior on scale { enabled: !GlassTheme.gaming; NumberAnimation { duration: 300; easing.type: Easing.OutBack; easing.overshoot: 1.2 } }
 
         // Liquid Glass Background
         LiquidGlass {
@@ -175,7 +171,7 @@ PanelWindow {
                     anchors.verticalCenter: parent.verticalCenter
                     text: "Bluetooth Devices"
                     color: "#ffffff"
-                    font.family: sfRegular.name
+                    font.family: "SF Pro Display"
                     font.pixelSize: 15
                     font.weight: Font.Bold
                 }
@@ -195,7 +191,7 @@ PanelWindow {
                         source: "file:///home/gabriel/.config/quickshell/assets/icons/refresh.svg"
                         fillMode: Image.PreserveAspectFit
                         rotation: modalWindow.isScanning ? 360 : 0
-                        Behavior on rotation { NumberAnimation { duration: 800; loops: Animation.Infinite } }
+                        Behavior on rotation { enabled: !GlassTheme.gaming; NumberAnimation { duration: 800; loops: Animation.Infinite } }
                     }
 
                     MouseArea {
@@ -235,7 +231,7 @@ PanelWindow {
                 visible: modalWindow.statusMsg !== ""
                 text: modalWindow.statusMsg
                 color: "#38bdf8"
-                font.family: sfRegular.name
+                font.family: "SF Pro Display"
                 font.pixelSize: 10
                 font.weight: Font.DemiBold
                 elide: Text.ElideRight
@@ -276,7 +272,7 @@ PanelWindow {
                             Text {
                                 text: modelData.name || modelData.mac
                                 color: "#ffffff"
-                                font.family: sfRegular.name
+                                font.family: "SF Pro Display"
                                 font.pixelSize: 12
                                 font.weight: Font.DemiBold
                                 elide: Text.ElideRight
@@ -286,7 +282,7 @@ PanelWindow {
                             Text {
                                 text: modelData.connected ? "Connected" : (modelData.paired ? "Paired" : "Ready to pair")
                                 color: modelData.connected ? "#34d399" : Qt.rgba(1, 1, 1, 0.55)
-                                font.family: sfRegular.name
+                                font.family: "SF Pro Display"
                                 font.pixelSize: 9
                             }
                         }
@@ -302,7 +298,7 @@ PanelWindow {
                                 anchors.centerIn: parent
                                 text: modelData.connected ? "Disconnect" : "Connect"
                                 color: "#ffffff"
-                                font.family: sfRegular.name
+                                font.family: "SF Pro Display"
                                 font.pixelSize: 10
                                 font.weight: Font.Bold
                             }

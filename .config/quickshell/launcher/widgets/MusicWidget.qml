@@ -3,6 +3,7 @@ import Quickshell.Wayland
 import Quickshell.Io
 import QtQuick
 import QtQuick.Layouts
+import "../services"
 
 Item {
     id: musicWindow
@@ -11,16 +12,17 @@ Item {
     property alias cardItem: full
     property alias sharedBackdrop: glass.sharedBackdrop
 
-    FontLoader {
-        id: sfRegular
-        source: Qt.resolvedUrl("fonts/sf_pro_display_regular.otf")
-    }
 
     // Animated Target Position (Driven by Layout Manager)
     property real targetX: 1530
     property real targetY: 420
     property real targetWidth: 340
     property real targetHeight: 160
+    property string variant: "classic"   // visual escolhido pelo layout ("classic" = o de sempre)
+    // variant "hidden": some com fade (o layout não usa este widget)
+    opacity: variant === "hidden" ? 0 : 1
+    visible: opacity > 0.01
+    Behavior on opacity { enabled: !GlassTheme.gaming; NumberAnimation { duration: 260 } }
     property real tallHeight: 420   // altura do modo lyrics (definida pelo layout)
 
     function setWallpaper(path) {
@@ -31,14 +33,16 @@ Item {
     property string layoutMode: "wide"
     readonly property bool isLyricsOpen: layoutMode === "tall"
 
-    // Media properties
-    property string trackTitle: "minor"
-    property string trackArtist: "Gracie Abrams"
-    property string trackArtUrl: ""
-    property string playerStatus: "Paused"
-    property real playbackPos: 26  // 0:26
-    property real playbackLen: 161 // 2:41
-    property bool isPlaying: playerStatus === "Playing"
+    // Dados da música vêm do MusicService (um playerctl só para todas as variantes)
+    readonly property string trackTitle: MusicService.title
+    readonly property string trackArtist: MusicService.artist
+    readonly property string trackArtUrl: MusicService.artUrl
+    readonly property string playerStatus: MusicService.status
+    readonly property real playbackPos: MusicService.position
+    readonly property real playbackLen: MusicService.length
+    readonly property bool isPlaying: MusicService.isPlaying
+    readonly property real precisePositionMs: MusicService.positionMs
+    readonly property string playerName: MusicService.playerName
 
     // Synced Lyrics state
     property var syncedLyrics: [
@@ -52,143 +56,46 @@ Item {
     ]
     property string lyricsTrackKey: ""
 
-    // High-precision MPRIS position sync & sub-second clock
-    property string _lastMediaArtUrl: ""
-    property real precisePositionMs: playbackPos * 1000
-    property real _lastAnchorRealSec: 0
-    property real _lastAnchorSystemTimeMs: 0
+    onTrackTitleChanged: lyricsDebounce.restart()
+    onTrackArtistChanged: lyricsDebounce.restart()
 
-    function syncWithRealPosition(sec) {
-        if (isNaN(sec) || sec < 0) return;
-        _lastAnchorRealSec = sec;
-        _lastAnchorSystemTimeMs = Date.now();
-        playbackPos = sec;
-        precisePositionMs = sec * 1000;
-    }
-
-    Process {
-        id: posQueryProc
-        command: ["playerctl", "position"]
-        stdout: SplitParser {
-            onRead: (line) => {
-                const sec = parseFloat(line.trim());
-                if (!isNaN(sec) && sec >= 0) {
-                    if (musicWindow._lastAnchorSystemTimeMs === 0) {
-                        musicWindow.syncWithRealPosition(sec);
-                    } else {
-                        const elapsed = (Date.now() - musicWindow._lastAnchorSystemTimeMs) / 1000;
-                        const expectedSec = musicWindow._lastAnchorRealSec + elapsed;
-                        if (Math.abs(sec - expectedSec) > 0.15) {
-                            musicWindow.syncWithRealPosition(sec);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    Process {
-        id: mediaFollower
-        command: ["playerctl", "metadata", "--follow", "--format",
-            "{{title}}│{{artist}}│{{mpris:artUrl}}│{{xesam:url}}│{{position}}│{{mpris:length}}│{{status}}│{{playerName}}"
-        ]
-        running: true
-        stdout: SplitParser {
-            onRead: (line) => {
-                try {
-                    const parts = line.trim().split("│");
-                    if (parts.length < 8) return;
-
-                    const title   = parts[0] || "";
-                    const artist  = parts[1] || "";
-                    const artUrl  = parts[2] || "";
-                    const url     = parts[3] || "";
-                    const pos     = parseInt(parts[4]) || 0;
-                    const len     = parseInt(parts[5]) || 0;
-                    const stat    = parts[6] || "Stopped";
-
-                    if (stat !== "Stopped") {
-                        musicWindow.trackTitle = title || "Unknown";
-                        musicWindow.trackArtist = artist || "Unknown Artist";
-
-                        let art = artUrl;
-                        if (!art && url) {
-                            let vid = "";
-                            const rxWatch = url.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
-                            if (rxWatch) {
-                                vid = rxWatch[1];
-                            } else {
-                                const rxShort = url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
-                                if (rxShort) {
-                                    vid = rxShort[1];
-                                } else {
-                                    const rxEmbed = url.match(/\/(?:embed|shorts|v)\/([a-zA-Z0-9_-]{11})/);
-                                    if (rxEmbed) vid = rxEmbed[1];
-                                }
-                            }
-                            if (vid) {
-                                art = "https://img.youtube.com/vi/" + vid + "/maxresdefault.jpg";
-                            }
-                        }
-
-                        if (art !== musicWindow._lastMediaArtUrl) {
-                            musicWindow._lastMediaArtUrl = art;
-                            musicWindow.trackArtUrl = art;
-                        }
-
-                        musicWindow.playbackLen = len > 0 ? (len / 1000000) : 0;
-                        musicWindow.playerStatus = stat;
-                    } else {
-                        musicWindow.playerStatus = "Stopped";
-                    }
-                } catch (e) {}
-            }
-        }
-    }
-
-    // Consulta periódica (1s) para reancorar e evitar drift
+    // título e artista chegam em eventos separados → espera os dois antes de buscar
     Timer {
-        id: posAnchorTimer
-        interval: 1000
-        running: musicWindow.isPlaying
-        repeat: true
+        id: lyricsDebounce
+        interval: 300
+        onTriggered: musicWindow.checkFetchLyrics(musicWindow.trackTitle, musicWindow.trackArtist, musicWindow.playbackLen)
+    }
+    // falha de rede → tenta de novo (até 3x)
+    property int _lyricsRetries: 0
+    Timer {
+        id: lyricsRetryTimer
+        interval: 5000
         onTriggered: {
-            if (!posQueryProc.running) posQueryProc.running = true;
+            musicWindow.lyricsTrackKey = "";
+            musicWindow.checkFetchLyrics(musicWindow.trackTitle, musicWindow.trackArtist, musicWindow.playbackLen, true);
         }
     }
+    function _lyricsNetFail(key) {
+        if (key !== lyricsTrackKey || _lyricsRetries >= 3) return;
+        _lyricsRetries++;
+        lyricsRetryTimer.restart();
+    }
 
-    // Interpolação suave a cada 50ms para lyrics 100% em tempo real com Spotify
-    Timer {
-        id: preciseTickTimer
-        interval: 50
-        running: musicWindow.isPlaying
-        repeat: true
-        onTriggered: {
-            if (musicWindow._lastAnchorSystemTimeMs > 0) {
-                const elapsed = Date.now() - musicWindow._lastAnchorSystemTimeMs;
-                const curSec = musicWindow._lastAnchorRealSec + (elapsed / 1000);
-                if (musicWindow.playbackLen > 0 && curSec <= musicWindow.playbackLen) {
-                    musicWindow.playbackPos = curSec;
-                    musicWindow.precisePositionMs = curSec * 1000;
-                }
+    // YouTube: "Artista - Topic", "ArtistaVEVO", "Artista - Música (Official Video)"
+    function normalizeMeta(title, artist) {
+        var a = (artist || "").replace(/\s*-\s*topic$/i, "").replace(/vevo$/i, "").replace(/\s*official$/i, "").trim();
+        var t = (title || "").replace(/[\(\[][^\)\]]*(official|video|audio|lyric|visuali[sz]er|clipe|\bmv\b|\bhd\b|4k)[^\)\]]*[\)\]]/gi, "")
+                             .replace(/\s*\|.*$/, "").trim();
+        var dash = t.indexOf(" - ");
+        if (dash > 0) {
+            var left = t.substring(0, dash).trim(), right = t.substring(dash + 3).trim();
+            var sq = function(x) { return x.toLowerCase().replace(/[^a-z0-9]/g, ""); };
+            if (!a || sq(left).indexOf(sq(a)) === 0 || sq(a).indexOf(sq(left)) === 0) {
+                a = left; t = right;
             }
         }
+        return { title: t || title, artist: a || artist };
     }
-
-    onPlayerStatusChanged: {
-        if (isPlaying) {
-            posQueryProc.running = true;
-        } else {
-            _lastAnchorSystemTimeMs = 0;
-        }
-    }
-
-    onTrackTitleChanged: {
-        _lastAnchorSystemTimeMs = 0;
-        posQueryProc.running = true;
-        checkFetchLyrics(trackTitle, trackArtist, playbackLen);
-    }
-    onTrackArtistChanged: checkFetchLyrics(trackTitle, trackArtist, playbackLen)
 
     Component.onCompleted: {
         if (trackTitle && trackArtist) {
@@ -219,7 +126,7 @@ Item {
         return clean.length > 0 ? clean : artist;
     }
 
-    function checkFetchLyrics(title, artist, duration) {
+    function checkFetchLyrics(title, artist, duration, isRetry) {
         if (!title || !artist) {
             syncedLyrics = [];
             return;
@@ -227,7 +134,11 @@ Item {
         const key = artist + "|" + title;
         if (key === lyricsTrackKey) return;
         lyricsTrackKey = key;
+        if (!isRetry) { _lyricsRetries = 0; lyricsRetryTimer.stop(); }
         syncedLyrics = [];
+        const nm = normalizeMeta(title, artist);
+        title = nm.title;
+        artist = nm.artist;
 
         // 1. Direct get request (without duration constraint to prevent 404 on duration variances)
         var exactUrl = "https://lrclib.net/api/get?artist_name=" + encodeURIComponent(artist) +
@@ -236,6 +147,8 @@ Item {
         var xhr = new XMLHttpRequest();
         xhr.onreadystatechange = function() {
             if (xhr.readyState !== XMLHttpRequest.DONE) return;
+            if (key !== musicWindow.lyricsTrackKey) return;   // resposta de uma música antiga
+            if (xhr.status === 0 || xhr.status >= 500) { musicWindow._lyricsNetFail(key); return; }
             if (xhr.status === 200) {
                 try {
                     var resp = JSON.parse(xhr.responseText);
@@ -249,13 +162,14 @@ Item {
                 } catch(e) {}
             }
             // If exact match failed, query fallback search with sanitized metadata
-            musicWindow.fetchLyricsFallback(title, artist, duration);
+            musicWindow.fetchLyricsFallback(title, artist, duration, key);
         };
+        xhr.timeout = 8000;
         xhr.open("GET", exactUrl);
         xhr.send();
     }
 
-    function fetchLyricsFallback(title, artist, duration) {
+    function fetchLyricsFallback(title, artist, duration, key) {
         var cTitle = cleanTrackTitle(title);
         var cArtist = cleanArtist(artist);
 
@@ -265,6 +179,8 @@ Item {
         var xhr = new XMLHttpRequest();
         xhr.onreadystatechange = function() {
             if (xhr.readyState !== XMLHttpRequest.DONE) return;
+            if (key !== musicWindow.lyricsTrackKey) return;
+            if (xhr.status === 0 || xhr.status >= 500) { musicWindow._lyricsNetFail(key); return; }
             if (xhr.status === 200) {
                 try {
                     var items = JSON.parse(xhr.responseText);
@@ -287,6 +203,7 @@ Item {
                 } catch(e) {}
             }
         };
+        xhr.timeout = 8000;
         xhr.open("GET", searchUrl);
         xhr.send();
     }
@@ -326,30 +243,10 @@ Item {
         return res;
     }
 
-    // Command executions
-    Process { id: playPauseCmd; command: ["playerctl", "play-pause"] }
-    Process { id: prevCmd;      command: ["playerctl", "previous"] }
-    Process { id: nextCmd;      command: ["playerctl", "next"] }
-    Process { id: seekCmd }
-
-    function togglePlay() {
-        musicWindow.playerStatus = musicWindow.isPlaying ? "Paused" : "Playing";
-        playPauseCmd.running = true;
-    }
-
-    function playPrevious() {
-        prevCmd.running = true;
-    }
-
-    function playNext() {
-        nextCmd.running = true;
-    }
-
-    function seekPosition(sec) {
-        musicWindow.syncWithRealPosition(sec);
-        seekCmd.command = ["playerctl", "position", String(Math.round(sec))];
-        seekCmd.running = true;
-    }
+    function togglePlay() { MusicService.togglePlay(); }
+    function playPrevious() { MusicService.previous(); }
+    function playNext() { MusicService.next(); }
+    function seekPosition(sec) { MusicService.seek(sec); }
 
     function toggleLyrics() {
         if (musicWindow.layoutMode === "tall") {
@@ -372,16 +269,19 @@ Item {
     // The Music Card
     Item {
         id: full
+        opacity: vhost.active || musicWindow.variant === "hidden" ? 0 : 1   // clássico some quando uma variante assume ou quando o layout esconde o widget (senão pisca no fade-out)
+        visible: opacity > 0.01
+        Behavior on opacity { enabled: !GlassTheme.gaming; NumberAnimation { duration: 200 } }
         x: musicWindow.targetX
         y: musicWindow.targetY
 
         width: musicWindow.targetWidth > 0 ? musicWindow.targetWidth : 340
         height: musicWindow.layoutMode === "tall" ? musicWindow.tallHeight : (musicWindow.layoutMode === "bar" ? 62 : (musicWindow.targetHeight > 0 ? musicWindow.targetHeight : 160))
 
-        Behavior on x { NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
-        Behavior on y { NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
-        Behavior on width { NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
-        Behavior on height { NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
+        Behavior on x { enabled: !GlassTheme.gaming; NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
+        Behavior on y { enabled: !GlassTheme.gaming; NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
+        Behavior on width { enabled: !GlassTheme.gaming; NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
+        Behavior on height { enabled: !GlassTheme.gaming; NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
 
         // Liquid Glass Background
         LiquidGlass {
@@ -392,9 +292,9 @@ Item {
             tint: musicWindow.layoutMode === "tall" ? "#0a1024" : "#ffffff"
             tintAlpha: musicWindow.layoutMode === "tall" ? 0.28 : 0.15
             lumaCap: musicWindow.layoutMode === "tall" ? 0.50 : 0.80
-            Behavior on tint { ColorAnimation { duration: 320 } }
-            Behavior on tintAlpha { NumberAnimation { duration: 320 } }
-            Behavior on lumaCap { NumberAnimation { duration: 320 } }
+            Behavior on tint { enabled: !GlassTheme.gaming; ColorAnimation { duration: 320 } }
+            Behavior on tintAlpha { enabled: !GlassTheme.gaming; NumberAnimation { duration: 320 } }
+            Behavior on lumaCap { enabled: !GlassTheme.gaming; NumberAnimation { duration: 320 } }
             widgetX: full.x
             widgetY: full.y
             screenWidth: musicWindow.width > 0 ? musicWindow.width : 1920
@@ -410,7 +310,7 @@ Item {
             anchors.margins: 14
             visible: musicWindow.layoutMode === "wide"
             opacity: visible ? 1.0 : 0.0
-            Behavior on opacity { NumberAnimation { duration: 200 } }
+            Behavior on opacity { enabled: !GlassTheme.gaming; NumberAnimation { duration: 200 } }
 
             // "Lyrics" Toggle Button (Top Right)
             Rectangle {
@@ -438,7 +338,7 @@ Item {
                     Text {
                         text: "Lyrics"
                         color: "#ffffff"
-                        font.family: sfRegular.name
+                        font.family: "SF Pro Display"
                         font.pixelSize: 11
                         font.weight: Font.Medium
                         anchors.verticalCenter: parent.verticalCenter
@@ -519,7 +419,7 @@ Item {
                             text: musicWindow.trackTitle
                             fontSize: 16
                             fontWeight: Font.DemiBold
-                            fontFamily: sfRegular.name
+                            fontFamily: "SF Pro Display"
                             textColor: "#ffffff"
                             horizontalAlignment: Text.AlignHCenter
                         }
@@ -531,7 +431,7 @@ Item {
                             text: musicWindow.trackArtist
                             fontSize: 12
                             fontWeight: Font.Normal
-                            fontFamily: sfRegular.name
+                            fontFamily: "SF Pro Display"
                             textColor: "#ffffff"
                             textOpacity: 0.65
                             horizontalAlignment: Text.AlignHCenter
@@ -576,7 +476,7 @@ Item {
                 anchors.bottom: parent.bottom
                 position: musicWindow.playbackPos
                 length: musicWindow.playbackLen
-                fontFamily: sfRegular.name
+                fontFamily: "SF Pro Display"
                 fontSize: 10
                 onSeek: function(sec) { musicWindow.seekPosition(sec) }
             }
@@ -591,7 +491,7 @@ Item {
             anchors.margins: 8
             visible: musicWindow.layoutMode === "bar"
             opacity: visible ? 1.0 : 0.0
-            Behavior on opacity { NumberAnimation { duration: 200 } }
+            Behavior on opacity { enabled: !GlassTheme.gaming; NumberAnimation { duration: 200 } }
 
             // Album art on left
             AlbumArt {
@@ -631,7 +531,7 @@ Item {
                         text: musicWindow.trackTitle
                         fontSize: 13
                         fontWeight: Font.DemiBold
-                        fontFamily: sfRegular.name
+                        fontFamily: "SF Pro Display"
                         textColor: "#ffffff"
                     }
 
@@ -640,7 +540,7 @@ Item {
                         height: 14
                         text: musicWindow.trackArtist
                         fontSize: 11
-                        fontFamily: sfRegular.name
+                        fontFamily: "SF Pro Display"
                         textColor: "#ffffff"
                         textOpacity: 0.65
                     }
@@ -707,7 +607,7 @@ Item {
             anchors.margins: 16
             visible: musicWindow.layoutMode === "tall"
             opacity: visible ? 1.0 : 0.0
-            Behavior on opacity { NumberAnimation { duration: 200 } }
+            Behavior on opacity { enabled: !GlassTheme.gaming; NumberAnimation { duration: 200 } }
 
             // Synced Scrolling Lyrics Area
             SyncedLyricsView {
@@ -718,7 +618,7 @@ Item {
                 anchors.bottomMargin: 10
                 syncedLyrics: musicWindow.syncedLyrics
                 currentPositionMs: musicWindow.precisePositionMs
-                fontFamily: sfRegular.name
+                fontFamily: "SF Pro Display"
                 baseFontSize: 16
                 blurEnabled: true
                 onSeekTo: function(sec) { musicWindow.seekPosition(sec) }
@@ -757,7 +657,7 @@ Item {
                         Text {
                             text: "Lyrics"
                             color: "#ffffff"
-                            font.family: sfRegular.name
+                            font.family: "SF Pro Display"
                             font.pixelSize: 10
                             font.weight: Font.Medium
                             anchors.verticalCenter: parent.verticalCenter
@@ -828,5 +728,19 @@ Item {
                 glass.mouseV = -1;
             }
         }
+    }
+
+    // Visuais alternativos escolhidos pelo layout (widgets/variants/)
+    VariantHost {
+        id: vhost
+        variant: musicWindow.variant
+        sources: ({ pill: Qt.resolvedUrl("variants/MusicPill.qml"), cover: Qt.resolvedUrl("variants/MusicCover.qml"), vinyl: Qt.resolvedUrl("variants/MusicVinyl.qml"), poster: Qt.resolvedUrl("variants/MusicPoster.qml") })
+        targetX: musicWindow.targetX
+        targetY: musicWindow.targetY
+        targetWidth: musicWindow.targetWidth
+        targetHeight: musicWindow.targetHeight
+        sharedBackdrop: musicWindow.sharedBackdrop
+        screenW: musicWindow.width > 0 ? musicWindow.width : 1920
+        screenH: musicWindow.height > 0 ? musicWindow.height : 1200
     }
 }

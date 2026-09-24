@@ -20,14 +20,17 @@ Item {
         id: barlowSemiBold
         source: Qt.resolvedUrl("fonts/barlow_semibold.ttf")
     }
-    FontLoader {
-        id: sfProRounded
-        source: Qt.resolvedUrl("fonts/sf_pro_rounded.otf")
-    }
 
     // Animated Target Position (Driven by Layout Manager)
     property real targetX: 50
     property real targetY: 55
+    property real targetWidth: 240     // usados pelas variantes (o card clássico tem tamanho fixo)
+    property real targetHeight: 140
+    property string variant: "classic"   // visual escolhido pelo layout ("classic" = o de sempre)
+    // variant "hidden": some com fade (o layout não usa este widget)
+    opacity: variant === "hidden" ? 0 : 1
+    visible: opacity > 0.01
+    Behavior on opacity { enabled: !GlassTheme.gaming; NumberAnimation { duration: 260 } }
 
     function setWallpaper(path) {
         glass.setWallpaper(path);
@@ -89,13 +92,16 @@ Item {
     // The Clock Card
     Item {
         id: full
+        opacity: vhost.active || clockWindow.variant === "hidden" ? 0 : 1   // clássico some quando uma variante assume ou quando o layout esconde o widget (senão pisca no fade-out)
+        visible: opacity > 0.01
+        Behavior on opacity { enabled: !GlassTheme.gaming; NumberAnimation { duration: 200 } }
         x: clockWindow.targetX
         y: clockWindow.targetY
         width: 240
         height: 140
 
-        Behavior on x { NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
-        Behavior on y { NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
+        Behavior on x { enabled: !GlassTheme.gaming; NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
+        Behavior on y { enabled: !GlassTheme.gaming; NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
 
         // Liquid Glass Frosted Background
         LiquidGlass {
@@ -146,7 +152,7 @@ Item {
             anchors.top: parent.top
             anchors.topMargin: full._annoMargin
             text: clockWindow.cityCode
-            font.family: sfProRounded.name
+            font.family: "SF Pro Rounded"
             font.pixelSize: full._annoFont
             font.weight: Font.Medium
             color: "#ffffff"
@@ -159,7 +165,7 @@ Item {
             anchors.bottom: parent.bottom
             anchors.bottomMargin: full._annoMargin
             text: clockWindow.subLabel
-            font.family: sfProRounded.name
+            font.family: "SF Pro Rounded"
             font.pixelSize: full._annoFont
             font.weight: Font.Medium
             color: "#ffffff"
@@ -194,5 +200,19 @@ Item {
                 glass.mouseV = -1;
             }
         }
+    }
+
+    // Visuais alternativos escolhidos pelo layout (widgets/variants/)
+    VariantHost {
+        id: vhost
+        variant: clockWindow.variant
+        sources: ({ hero: Qt.resolvedUrl("variants/ClockHero.qml"), bento: Qt.resolvedUrl("variants/ClockBento.qml"), ring: Qt.resolvedUrl("variants/ClockRing.qml"), editorial: Qt.resolvedUrl("variants/ClockEditorial.qml") })
+        targetX: clockWindow.targetX
+        targetY: clockWindow.targetY
+        targetWidth: clockWindow.targetWidth
+        targetHeight: clockWindow.targetHeight
+        sharedBackdrop: clockWindow.sharedBackdrop
+        screenW: clockWindow.width > 0 ? clockWindow.width : 1920
+        screenH: clockWindow.height > 0 ? clockWindow.height : 1200
     }
 }

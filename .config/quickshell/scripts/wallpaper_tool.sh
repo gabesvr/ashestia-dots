@@ -108,9 +108,11 @@ cmd_set() {
     # 1. Update wallpaper seamlessly with swaybg (launch new on top, then kill older)
     local old_pids
     old_pids=$(pgrep -x swaybg)
-    setsid swaybg -i "$path" -m fill </dev/null >/dev/null 2>&1 &
+    setsid systemd-run --user --scope --quiet --collect swaybg -i "$path" -m fill </dev/null >/dev/null 2>&1 &
     local new_pid=$!
     disown 2>/dev/null
+    # grava já: se este processo for cancelado (troca rápida pelo widget) o Quickshell ainda recebe o novo caminho
+    echo "$path" > "$CURRENT_WP_FILE"
     sleep 0.2
     if [ -n "$old_pids" ]; then
         for p in $old_pids; do
@@ -119,9 +121,6 @@ cmd_set() {
             fi
         done
     fi
-
-    # 2. Write configs atomically
-    echo "$path" > "$CURRENT_WP_FILE"
 
     # 3. Clean names and colors
     local name
@@ -142,7 +141,7 @@ cmd_init() {
     wp=$(get_active)
     if [ -n "$wp" ] && [ -f "$wp" ]; then
         pkill -x swaybg 2>/dev/null
-        setsid swaybg -i "$wp" -m fill </dev/null >/dev/null 2>&1 &
+        setsid systemd-run --user --scope --quiet --collect swaybg -i "$wp" -m fill </dev/null >/dev/null 2>&1 &
         disown 2>/dev/null
     fi
 }

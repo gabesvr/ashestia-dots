@@ -1,2 +1,3 @@
 .music_cache.json
 *.tmp
+.superpowers/

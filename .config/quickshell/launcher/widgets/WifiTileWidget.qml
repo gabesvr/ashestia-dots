@@ -16,19 +16,16 @@ Item {
         glass.setWallpaper(path);
     }
 
-    FontLoader {
-        id: sfProRounded
-        source: Qt.resolvedUrl("fonts/sf_pro_rounded.otf")
-    }
-    FontLoader {
-        id: sfRegular
-        source: Qt.resolvedUrl("fonts/sf_pro_display_regular.otf")
-    }
 
     property real targetX: 1530
     property real targetY: 586
     property real targetWidth: 76
     property real targetHeight: 76
+    property string variant: "classic"   // visual escolhido pelo layout ("classic" = o de sempre)
+    // variant "hidden": some com fade (o layout não usa este widget)
+    opacity: variant === "hidden" ? 0 : 1
+    visible: opacity > 0.01
+    Behavior on opacity { enabled: !GlassTheme.gaming; NumberAnimation { duration: 260 } }
 
     property bool isWifiOn: true
     property string wifiSsid: ""
@@ -41,16 +38,20 @@ Item {
     property string selectedSsid: ""
     property string passwordInput: ""
     property string statusMessage: ""
+    property string connectingSsid: ""   // trava cliques durante a conexão (um 2º connect derruba a rede)
 
-    function scanNetworks() {
+    // rescan = true: lista em cache na hora + varredura nova (o NM quase não varre sozinho com sinal bom)
+    function scanNetworks(rescan) {
         if (isScanning) return;
         isScanning = true;
-        statusMessage = "Scanning...";
+        scanProc.command = ["/home/gabriel/.config/quickshell/scripts/wifi_tool.sh", "list"].concat(rescan ? ["rescan"] : []);
         scanProc.running = false;
         scanProc.running = true;
     }
 
     function connectTo(ssid, password) {
+        if (connectingSsid !== "") return;
+        connectingSsid = ssid;
         statusMessage = "Connecting to " + ssid + "...";
         connectProc.command = ["/home/gabriel/.config/quickshell/scripts/wifi_tool.sh", "connect", ssid];
         if (password) connectProc.command.push(password);
@@ -66,12 +67,8 @@ Item {
             onRead: (line) => {
                 try {
                     const data = JSON.parse(line.trim());
-                    if (data.networks) {
-                        root.networkList = data.networks;
-                        root.statusMessage = "";
-                    }
+                    if (data.networks) root.networkList = data.networks;
                 } catch(e) {}
-                root.isScanning = false;
             }
         }
         onExited: (code) => { root.isScanning = false; }
@@ -80,26 +77,37 @@ Item {
     Process {
         id: connectProc
         running: false
+        onExited: root.connectingSsid = ""   // garante a trava solta mesmo se o script não imprimir nada
         stdout: SplitParser {
             onRead: (line) => {
                 try {
                     const data = JSON.parse(line.trim());
                     if (data.success) {
-                        root.statusMessage = "Connected!";
+                        root.statusMessage = "";
                         root.selectedSsid = "";
                         root.passwordInput = "";
-                        root.scanNetworks();
                     } else {
                         root.statusMessage = "Failed: " + (data.output || "Error");
+                        root.selectedSsid = root.connectingSsid;   // senha salva errada/ausente: abre o campo de senha
                     }
                 } catch(e) {}
+                root.connectingSsid = "";
+                root.scanNetworks(false);
             }
         }
     }
 
+    // Painel aberto: varre de novo a cada 15 s (redes que aparecem/somem)
+    Timer {
+        interval: 15000
+        repeat: true
+        running: root.isExpanded && root.isWifiOn
+        onTriggered: root.scanNetworks(true)
+    }
+
     onIsExpandedChanged: {
         if (isExpanded) {
-            scanNetworks();
+            scanNetworks(true);
         } else {
             selectedSsid = "";
             passwordInput = "";
@@ -114,25 +122,25 @@ Item {
         width: root.isExpanded ? 340 : root.targetWidth
         height: root.isExpanded ? 290 : root.targetHeight
 
-        Behavior on x { NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
-        Behavior on y { NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
-        Behavior on width { NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
-        Behavior on height { NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
+        Behavior on x { enabled: !GlassTheme.gaming; NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
+        Behavior on y { enabled: !GlassTheme.gaming; NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
+        Behavior on width { enabled: !GlassTheme.gaming; NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
+        Behavior on height { enabled: !GlassTheme.gaming; NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
 
         scale: (tileMouse.pressed && !root.isExpanded) ? 0.92 : ((tileMouse.containsMouse && !root.isExpanded) ? 1.04 : 1.0)
-        Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
+        Behavior on scale { enabled: !GlassTheme.gaming; NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
 
         LiquidGlass {
             id: glass
             anchors.fill: parent
-            radius: root.isExpanded ? 28 : Math.min(24, Math.min(full.height, full.width) * 0.45)
-            roundness: 4.6
+            radius: root.isExpanded ? 28 : (root.variant === "circle" ? Math.min(full.height, full.width) / 2 : Math.min(24, Math.min(full.height, full.width) * 0.45))
+            roundness: (root.variant === "circle" && root.isExpanded !== true) ? 2.0 : 4.6   // "circle": tile redondo (Orbit/Hero/Island)
             tint: root.isExpanded ? "#0a1024" : "#ffffff"
             tintAlpha: root.isExpanded ? 0.30 : 0.15
             lumaCap: root.isExpanded ? 0.50 : 0.80
-            Behavior on tint { ColorAnimation { duration: 320 } }
-            Behavior on tintAlpha { NumberAnimation { duration: 320 } }
-            Behavior on lumaCap { NumberAnimation { duration: 320 } }
+            Behavior on tint { enabled: !GlassTheme.gaming; ColorAnimation { duration: 320 } }
+            Behavior on tintAlpha { enabled: !GlassTheme.gaming; NumberAnimation { duration: 320 } }
+            Behavior on lumaCap { enabled: !GlassTheme.gaming; NumberAnimation { duration: 320 } }
             widgetX: full.x
             widgetY: full.y
             screenWidth: root.width > 0 ? root.width : 1920
@@ -187,7 +195,7 @@ Item {
             anchors.margins: 16
             visible: root.isExpanded || opacity > 0.01
             opacity: root.isExpanded ? 1 : 0
-            Behavior on opacity { NumberAnimation { duration: 240 } }
+            Behavior on opacity { enabled: !GlassTheme.gaming; NumberAnimation { duration: 240 } }
             clip: true
 
             PanelHeader {
@@ -203,7 +211,7 @@ Item {
                 switchOn: root.isWifiOn
                 busy: root.isScanning
                 onSwitchToggled: root.toggleRequested()
-                onRefreshClicked: root.scanNetworks()
+                onRefreshClicked: root.scanNetworks(true)
                 onCloseClicked: root.isExpanded = false
             }
 
@@ -241,8 +249,8 @@ Item {
                     border.color: modelData.in_use ? Qt.rgba(1, 1, 1, 0.30) : Qt.rgba(1, 1, 1, 0.06)
                     clip: true
 
-                    Behavior on height { NumberAnimation { duration: 260; easing.type: Easing.OutBack; easing.overshoot: 0.6 } }
-                    Behavior on color { ColorAnimation { duration: 120 } }
+                    Behavior on height { enabled: !GlassTheme.gaming; NumberAnimation { duration: 260; easing.type: Easing.OutBack; easing.overshoot: 0.6 } }
+                    Behavior on color { enabled: !GlassTheme.gaming; ColorAnimation { duration: 120 } }
 
                     MouseArea {
                         id: rowMouse
@@ -253,8 +261,8 @@ Item {
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
-                            if (modelData.in_use) return;
-                            if (modelData.is_locked) {
+                            if (modelData.in_use || root.connectingSsid !== "") return;
+                            if (modelData.is_locked && !modelData.saved) {
                                 root.selectedSsid = netRow.selected ? "" : modelData.ssid;
                             } else {
                                 root.connectTo(modelData.ssid, null);
@@ -279,7 +287,7 @@ Item {
                         y: (40 - height) / 2
                         text: modelData.ssid
                         color: "#ffffff"
-                        font.family: sfRegular.name
+                        font.family: "SF Pro Display"
                         font.pixelSize: 13
                         font.weight: modelData.in_use ? Font.Bold : Font.Medium
                         elide: Text.ElideRight
@@ -339,7 +347,7 @@ Item {
                                 anchors.rightMargin: 10
                                 verticalAlignment: TextInput.AlignVCenter
                                 color: "#ffffff"
-                                font.family: sfRegular.name
+                                font.family: "SF Pro Display"
                                 font.pixelSize: 12
                                 echoMode: TextInput.Password
                                 selectByMouse: true
@@ -365,7 +373,7 @@ Item {
                                 anchors.centerIn: parent
                                 text: "Join"
                                 color: "#ffffff"
-                                font.family: sfRegular.name
+                                font.family: "SF Pro Display"
                                 font.pixelSize: 12
                                 font.weight: Font.Bold
                             }
@@ -385,7 +393,7 @@ Item {
                 visible: root.networkList.length === 0
                 text: !root.isWifiOn ? "Wi-Fi is off" : (root.isScanning ? "Looking for networks…" : "No networks found")
                 color: Qt.rgba(1, 1, 1, 0.70)
-                font.family: sfRegular.name
+                font.family: "SF Pro Display"
                 font.pixelSize: 12
             }
         }

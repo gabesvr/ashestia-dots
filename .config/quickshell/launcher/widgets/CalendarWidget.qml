@@ -12,15 +12,16 @@ Item {
     property alias sharedBackdrop: glass.sharedBackdrop
 
     // Font loading
-    FontLoader {
-        id: sfRegular
-        source: Qt.resolvedUrl("fonts/sf_pro_display_regular.otf")
-    }
 
     // Animated Target Position (Driven by Layout Manager)
     property real targetX: 50
     property real targetY: 220
     property real targetWidth: 240
+    property string variant: "classic"   // visual escolhido pelo layout ("classic" = o de sempre)
+    // variant "hidden": some com fade (o layout não usa este widget)
+    opacity: variant === "hidden" ? 0 : 1
+    visible: opacity > 0.01
+    Behavior on opacity { enabled: !GlassTheme.gaming; NumberAnimation { duration: 260 } }
 
     function setWallpaper(path) {
         glass.setWallpaper(path);
@@ -122,9 +123,9 @@ Item {
         width: calendarWindow.targetWidth
         height: 195
 
-        Behavior on x { NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
-        Behavior on y { NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
-        Behavior on width { NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
+        Behavior on x { enabled: !GlassTheme.gaming; NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
+        Behavior on y { enabled: !GlassTheme.gaming; NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
+        Behavior on width { enabled: !GlassTheme.gaming; NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
 
         // Liquid Glass Background
         LiquidGlass {
@@ -162,7 +163,7 @@ Item {
                         id: monthText
                         text: calendarWindow.displayMonthName
                         color: "#ffffff"
-                        font.family: sfRegular.name
+                        font.family: "SF Pro Display"
                         font.pixelSize: full.labelSize
                         font.weight: Font.DemiBold
                         font.letterSpacing: 1.2
@@ -187,7 +188,7 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: 6
                     opacity: clickArea.containsMouse ? 0.75 : 0.0
-                    Behavior on opacity { NumberAnimation { duration: 180 } }
+                    Behavior on opacity { enabled: !GlassTheme.gaming; NumberAnimation { duration: 180 } }
 
                     Text {
                         text: "‹"
@@ -237,7 +238,7 @@ Item {
                                 text: calendarWindow.weekdayShort[index]
                                 color: "#ffffff"
                                 opacity: calendarWindow.isWeekendCol(index) ? 0.45 : 0.85
-                                font.family: sfRegular.name
+                                font.family: "SF Pro Display"
                                 font.pixelSize: full.labelSize
                                 font.weight: Font.Medium
                                 renderType: Text.NativeRendering
@@ -283,7 +284,7 @@ Item {
                                 text: day
                                 color: "#ffffff"
                                 opacity: isWeekend ? 0.45 : 1.0
-                                font.family: sfRegular.name
+                                font.family: "SF Pro Display"
                                 font.pixelSize: full.labelSize
                                 font.weight: Font.Medium
                                 renderType: Text.NativeRendering
@@ -298,7 +299,7 @@ Item {
                                 dayNumber: day
                                 diameter: gridWrap.badgeDiameter
                                 fontPixelSize: full.labelSize * 1.05
-                                fontFamily: sfRegular.name
+                                fontFamily: "SF Pro Display"
                                 badgeColor: "#ffffff"
                                 punchOutText: true
                             }

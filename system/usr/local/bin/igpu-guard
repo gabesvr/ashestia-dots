@@ -1,0 +1,41 @@
+#!/bin/bash
+# Roda antes do login (igpu-guard.service) e ajusta o sistema ao estado REAL do firmware
+# (nunca a um arquivo que possa divergir dele — divergência = tela preta):
+#   MUX 0 (NVIDIA): a AMD não liga nada -> sai do barramento PCI (substitui o antigo 98-remove-igpu.rules).
+#   MUX 1 (AMD)   : carrega o amdgpu (bloqueado para autoload em dgpu-only.conf). No 1º boot após
+#                   `gpu-mode amd`, tira a NVIDIA do barramento e a desliga no firmware (dgpu_disable persiste).
+#   Firmware ilegível: carrega o amdgpu mesmo assim — com a AMD ativa a tela sempre acende.
+# Resultado em /run/gpu-mode (amd|nvidia), lido pelo env.lua do Hyprland e pelo `gpu-mode status`,
+# e /run/gpu-mode.env (variáveis de GPU p/ serviços do usuário, ex.: quickshell.service — sem elas a libgbm
+# carrega a Mesa + LLVM (~19 MB) mesmo no modo NVIDIA).
+write_env() {
+    if [ "$1" = nvidia ]; then
+        printf 'GBM_BACKEND=nvidia-drm\n__GLX_VENDOR_LIBRARY_NAME=nvidia\n__EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/10_nvidia.json\n' > /run/gpu-mode.env
+    else
+        printf '__EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/50_mesa.json\n' > /run/gpu-mode.env
+    fi
+}
+ATTR=/sys/class/firmware-attributes/asus-armoury/attributes
+IGPU=/sys/bus/pci/devices/0000:65:00.0
+
+modprobe asus_armoury 2>/dev/null
+for _ in $(seq 1 50); do [ -r "$ATTR/gpu_mux_mode/current_value" ] && break; sleep 0.1; done
+mux=$(cat "$ATTR/gpu_mux_mode/current_value" 2>/dev/null)
+
+if [ "$mux" = 0 ]; then
+    [ -e "$IGPU" ] && echo 1 > "$IGPU/remove"
+    echo nvidia > /run/gpu-mode
+    write_env nvidia
+    exit 0
+fi
+
+modprobe amdgpu
+if [ "$mux" = 1 ] && [ "$(cat /var/lib/gpu-mode/want 2>/dev/null)" = amd ] \
+   && [ "$(cat "$ATTR/dgpu_disable/current_value" 2>/dev/null)" = 0 ]; then
+    for f in 0000:01:00.1 0000:01:00.0; do
+        [ -e "/sys/bus/pci/devices/$f" ] && echo 1 > "/sys/bus/pci/devices/$f/remove"
+    done
+    echo 1 > "$ATTR/dgpu_disable/current_value"
+fi
+echo amd > /run/gpu-mode
+write_env amd

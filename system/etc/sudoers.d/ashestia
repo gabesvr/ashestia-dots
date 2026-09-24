@@ -1,0 +1,4 @@
+%wheel ALL=(ALL) NOPASSWD: /usr/local/bin/gpu-mode
+%wheel ALL=(ALL) NOPASSWD: /usr/local/bin/power-mode
+%wheel ALL=(ALL) NOPASSWD: /usr/local/bin/gaming-mode.sh
+%wheel ALL=(ALL) NOPASSWD: /usr/local/bin/gpu-oc

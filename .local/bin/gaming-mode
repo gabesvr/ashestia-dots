@@ -1,0 +1,51 @@
+#!/bin/bash
+# Modo Gaming — liga/desliga tudo que pesa no desktop para o máximo de FPS.
+# Uso: gaming-mode on | off | toggle | status
+#   on : Hyprland sem animações/blur/sombra/dim, Quickshell DESLIGADO (widgets, ícones,
+#        cava — zero render/RAM), notificações sólidas, terminal sem fastfetch,
+#        overclock da GPU, perfil performance.
+#   off: restaura tudo (hyprctl reload relê o hyprland.lua sem o bloco gaming) e religa o Quickshell.
+# Atalho: SUPER+SHIFT+G (o tile some junto com o Quickshell).
+# Estado em ~/.config/hypr/gaming_mode (lido pelo hyprland.lua, Quickshell e fish).
+
+STATE="$HOME/.config/hypr/gaming_mode"
+GPU_CORE_OFFSET=150   # MHz — se o jogo travar/crashar, baixe para 100
+GPU_MEM_OFFSET=500    # MHz
+
+cur=$(cat "$STATE" 2>/dev/null)
+[ "$cur" = "on" ] || cur=off
+
+cmd="${1:-toggle}"
+[ "$cmd" = "toggle" ] && { [ "$cur" = "on" ] && cmd=off || cmd=on; }
+
+case "$cmd" in
+on)
+    echo on > "$STATE"
+    hyprctl eval 'hl.config({ animations = { enabled = false }, decoration = { blur = { enabled = false }, shadow = { enabled = false }, dim_inactive = false }, misc = { animate_mouse_windowdragging = false, animate_manual_resizes = false } })' >/dev/null
+    sudo -n /usr/local/bin/gpu-oc "$GPU_CORE_OFFSET" "$GPU_MEM_OFFSET" >/dev/null 2>&1
+    powerprofilesctl set performance 2>/dev/null
+    # devolve memória fragmentada ao kernel (páginas grandes para o jogo)
+    sudo -n sysctl -q vm.compact_memory=1 2>/dev/null
+    # Quickshell inteiro fora do ar: nenhum widget/ícone/shader renderizando
+    makoctl mode -r glass >/dev/null 2>&1
+    systemctl --user stop quickshell
+    notify-send -a "Modo Gaming" -i input-gaming -t 2500 "Modo Gaming ligado" "Widgets desligados · SUPER+SHIFT+G para sair" 2>/dev/null
+    echo "Modo gaming: ON"
+    ;;
+off)
+    echo off > "$STATE"
+    hyprctl reload >/dev/null
+    sudo -n /usr/local/bin/gpu-oc reset >/dev/null 2>&1
+    sudo -n /usr/local/bin/power-mode login >/dev/null 2>&1   # volta ao modo da chave de energia (carregador/bateria)
+    pkill -x fuzzel 2>/dev/null
+    systemctl --user start quickshell   # o GlassTheme religa o modo "glass" do mako sozinho
+    notify-send -a "Modo Gaming" -i input-gaming -t 2500 "Modo Gaming desligado" "Widgets de volta" 2>/dev/null
+    echo "Modo gaming: OFF"
+    ;;
+status)
+    echo "$cur"
+    ;;
+*)
+    echo "uso: gaming-mode on|off|toggle|status" >&2; exit 1
+    ;;
+esac

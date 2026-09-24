@@ -1,0 +1,39 @@
+#!/bin/bash
+# Modo de monitor: "auto" (HDMI ligado => só o externo) ou "laptop" (só a tela do notebook, HDMI desligado).
+# Estado em ~/.config/hypr/monitor_mode; hyprland.lua (apply_monitors) lê esse arquivo.
+# A troca é feita SEM nunca ficar com zero monitores (liga o novo, espera aparecer, só então desliga o antigo);
+# com zero saídas o Hyprland/apps Wayland (foot etc.) morrem. Por isso não usamos `hyprctl reload` aqui.
+STATE="$HOME/.config/hypr/monitor_mode"
+INT=$(ls /sys/class/drm/ | grep -o 'eDP-[0-9]*' | head -1); INT=${INT:-eDP-1}; EXT="HDMI-A-1"   # eDP-1 na NVIDIA, eDP-2 na AMD
+cur() { [ "$(cat "$STATE" 2>/dev/null)" = "laptop" ] && echo laptop || echo auto; }
+hdmi_connected() { cat /sys/class/drm/card*-HDMI-A-1/status 2>/dev/null | grep -q '^connected'; }
+active() { hyprctl monitors -j 2>/dev/null | grep -q "\"name\": \"$1\""; }
+wait_active() { for _ in $(seq 1 40); do active "$1" && return 0; sleep 0.25; done; return 1; }
+
+case "${1:-toggle}" in
+    status) cur; exit 0 ;;
+    laptop) new=laptop ;;
+    auto)   new=auto ;;
+    toggle) [ "$(cur)" = laptop ] && new=auto || new=laptop ;;
+    *) echo "uso: monitor-mode [toggle|laptop|auto|status]" >&2; exit 1 ;;
+esac
+
+# Estado primeiro: o reload disparado por monitor.added/removed no hyprland.lua lê este arquivo e precisa convergir para o mesmo alvo.
+echo "$new" > "$STATE"
+
+if [ "$new" = auto ] && hdmi_connected; then
+    hyprctl eval "hl.monitor({output=\"$INT\", mode=\"1920x1200@144\", position=\"2000x0\", scale=1.5, bitdepth=8, vrr=0})" >/dev/null 2>&1
+    hyprctl eval "hl.monitor({output=\"$EXT\", mode=\"1920x1080@180\", position=\"0x0\", scale=1, bitdepth=8, vrr=0, disabled=false})" >/dev/null 2>&1
+    if wait_active "$EXT"; then
+        sleep 0.5
+        hyprctl eval "hl.monitor({output=\"$INT\", disabled=true})" >/dev/null 2>&1
+    fi
+elif [ "$new" = laptop ]; then
+    hyprctl eval "hl.monitor({output=\"$EXT\", mode=\"1920x1080@180\", position=\"2000x0\", scale=1, bitdepth=8, vrr=0})" >/dev/null 2>&1
+    hyprctl eval "hl.monitor({output=\"$INT\", mode=\"1920x1200@144\", position=\"0x0\", scale=1.5, bitdepth=8, vrr=0, disabled=false})" >/dev/null 2>&1
+    if wait_active "$INT"; then
+        sleep 0.5
+        hyprctl eval "hl.monitor({output=\"$EXT\", disabled=true})" >/dev/null 2>&1
+    fi
+fi
+echo "$new"

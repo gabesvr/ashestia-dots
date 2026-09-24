@@ -2,6 +2,8 @@ source /usr/share/cachyos-fish-config/cachyos-config.fish
 
 # greeting minimalista — fastfetch com mascote do Claude
 function fish_greeting
+    # modo gaming: terminal abre instantâneo, sem fastfetch
+    test (cat ~/.config/hypr/gaming_mode 2>/dev/null) = on; and return
     fastfetch
 end
 

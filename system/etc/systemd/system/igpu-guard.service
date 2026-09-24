@@ -1,0 +1,13 @@
+[Unit]
+Description=Ajusta iGPU/dGPU ao modo do MUX (gpu-mode)
+DefaultDependencies=no
+After=local-fs.target systemd-modules-load.service systemd-udev-trigger.service
+Before=systemd-user-sessions.service nvidia-persistenced.service nvidia-performance.service nvidia-powerd.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/igpu-guard
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

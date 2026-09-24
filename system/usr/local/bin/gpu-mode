@@ -1,0 +1,48 @@
+#!/bin/bash
+# Troca a GPU que liga a tela (ASUS TUF FA607NUG). A troca SEMPRE exige reiniciar (MUX).
+#   gpu-mode amd    : MUX híbrido + NVIDIA desligada no firmware (máxima bateria; HDMI não funciona)
+#   gpu-mode nvidia : MUX dGPU, só NVIDIA (jogos, HDMI) — a configuração original
+#   gpu-mode status : modo em uso; "amd -> nvidia" se o firmware já aponta para o outro no próximo boot
+#   --no-reboot     : só grava o firmware
+# Ordem importa (o asus-wmi recusa o contrário): amd = MUX 1 agora, e o dgpu_disable=1 é feito pelo
+# igpu-guard no boot seguinte (com a tela já na AMD — desligar a NVIDIA com a tela nela derruba tudo).
+# nvidia = dgpu_disable 0 primeiro, depois MUX 0. Ver /usr/local/bin/igpu-guard.
+ATTR=/sys/class/firmware-attributes/asus-armoury/attributes
+WANT=/var/lib/gpu-mode/want
+
+get() { cat "$ATTR/$1/current_value" 2>/dev/null; }
+set_attr() {
+    echo "$2" > "$ATTR/$1/current_value" 2>/dev/null
+    [ "$(get "$1")" = "$2" ] || { echo "gpu-mode: o firmware recusou $1=$2" >&2; exit 1; }
+}
+running() { cat /run/gpu-mode 2>/dev/null || echo nvidia; }
+target() { [ "$(get gpu_mux_mode)" = 0 ] && echo nvidia || echo amd; }
+
+case "${1:-status}" in
+status)
+    r=$(running); t=$(target)
+    [ "$r" = "$t" ] && echo "$r" || echo "$r -> $t"
+    exit 0 ;;
+amd|nvidia) ;;
+*) echo "uso: gpu-mode amd|nvidia|status [--no-reboot]" >&2; exit 1 ;;
+esac
+
+[ "$EUID" -eq 0 ] || exec sudo -n "$0" "$@"
+modprobe asus_armoury 2>/dev/null
+[ -r "$ATTR/gpu_mux_mode/current_value" ] || { echo "gpu-mode: asus-armoury indisponível" >&2; exit 1; }
+
+mkdir -p "${WANT%/*}"
+if [ "$1" = amd ]; then
+    echo amd > "$WANT"
+    set_attr gpu_mux_mode 1
+else
+    echo nvidia > "$WANT"
+    if [ "$(get dgpu_disable)" != 0 ]; then
+        set_attr dgpu_disable 0
+        sleep 1   # a NVIDIA volta ao barramento antes de o MUX aceitar o modo dGPU
+    fi
+    set_attr gpu_mux_mode 0
+fi
+sync
+echo "gpu-mode: $1 no próximo boot"
+[ "$2" = --no-reboot ] || systemctl reboot

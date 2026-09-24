@@ -17,6 +17,46 @@ Singleton {
 
     readonly property string stateFile: "/home/gabriel/.config/quickshell/theme_mode.json"
 
+    // Modo gaming (tile "Gaming" / ~/.local/bin/gaming-mode): vidro vira sólido sem shader,
+    // animações e cava desligados. Estado no arquivo lido também pelo Hyprland e pelo fish.
+    property bool gaming: false
+    readonly property bool effectiveSolid: solid || gaming
+
+    function toggleGaming() {
+        gaming = !gaming;   // resposta imediata; o arquivo confirma logo depois
+        gamingProc.command = ["systemd-run", "--user", "--scope", "--quiet", "--collect",
+                              "/home/gabriel/.local/bin/gaming-mode", gaming ? "on" : "off"];
+        gamingProc.running = false;
+        gamingProc.running = true;
+    }
+
+    Process {
+        id: gamingProc
+        running: false
+    }
+
+    FileView {
+        id: gamingFile
+        path: "/home/gabriel/.config/hypr/gaming_mode"
+        watchChanges: true
+        printErrors: false
+        onFileChanged: reload()
+        onLoaded: theme.gaming = text().trim() === "on"
+    }
+
+    // Notificações (mako) acompanham o tema: modo "glass" = vidro claro, sem ele = sólido
+    onEffectiveSolidChanged: syncMako()
+    function syncMako() {
+        makoProc.command = ["makoctl", "mode", effectiveSolid ? "-r" : "-a", "glass"];
+        makoProc.running = false;
+        makoProc.running = true;
+    }
+
+    Process {
+        id: makoProc
+        running: false
+    }
+
     function toggle() {
         solid = !solid;
         saver.command = ["sh", "-c", "echo '{\"solid\":" + (solid ? "true" : "false") + "}' > " + stateFile];
@@ -47,6 +87,6 @@ Singleton {
     Timer {
         id: armTimer
         interval: 900
-        onTriggered: theme.animate = true
+        onTriggered: { theme.animate = true; theme.syncMako(); }
     }
 }

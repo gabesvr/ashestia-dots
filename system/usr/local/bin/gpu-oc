@@ -1,0 +1,8 @@
+#!/usr/bin/python3
+# Overclock da RTX 4050 Laptop via NVML (offsets na curva V/F). Uso: gpu-oc <core_mhz> <mem_mhz> | gpu-oc reset
+import sys, pynvml as n
+core, mem = (0, 0) if sys.argv[1:2] == ["reset"] else (int(sys.argv[1]), int(sys.argv[2]))
+n.nvmlInit(); h = n.nvmlDeviceGetHandleByIndex(0)
+n.nvmlDeviceSetGpcClkVfOffset(h, core)
+n.nvmlDeviceSetMemClkVfOffset(h, mem)
+print(f"GPU offset: core {n.nvmlDeviceGetGpcClkVfOffset(h):+d} MHz, mem {n.nvmlDeviceGetMemClkVfOffset(h):+d} MHz")

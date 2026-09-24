@@ -11,3 +11,12 @@ post_hook = "pkill -SIGUSR1 foot 2>/dev/null || true"
 [templates.cava]
 input_path = "/home/gabriel/.config/matugen/templates/cava.conf"
 output_path = "/home/gabriel/.config/cava/config"
+
+[templates.mako]
+input_path = "/home/gabriel/.config/matugen/templates/mako.conf"
+output_path = "/home/gabriel/.config/mako/config"
+post_hook = "makoctl reload 2>/dev/null || true"
+
+[templates.fuzzel]
+input_path = "/home/gabriel/.config/matugen/templates/fuzzel.ini"
+output_path = "/home/gabriel/.config/fuzzel/fuzzel.ini"

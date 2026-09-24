@@ -17,6 +17,11 @@ Item {
     property real targetY: 688
     property real targetWidth: 76
     property real targetHeight: 76
+    property string variant: "classic"   // visual escolhido pelo layout ("classic" = o de sempre)
+    // variant "hidden": some com fade (o layout não usa este widget)
+    opacity: variant === "hidden" ? 0 : 1
+    visible: opacity > 0.01
+    Behavior on opacity { enabled: !GlassTheme.gaming; NumberAnimation { duration: 260 } }
 
     readonly property bool isSolid: GlassTheme.solid
 
@@ -34,28 +39,66 @@ Item {
         onWidthChanged: GlassTheme.originX = x + width / 2
         onHeightChanged: GlassTheme.originY = y + height / 2
 
-        Behavior on x { NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
-        Behavior on y { NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
-        Behavior on width { NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
-        Behavior on height { NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
+        Behavior on x { enabled: !GlassTheme.gaming; NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
+        Behavior on y { enabled: !GlassTheme.gaming; NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
+        Behavior on width { enabled: !GlassTheme.gaming; NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
+        Behavior on height { enabled: !GlassTheme.gaming; NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
 
         scale: tileMouse.pressed ? 0.94 : (tileMouse.containsMouse ? 1.04 : 1.0)
-        Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
+        Behavior on scale { enabled: !GlassTheme.gaming; NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
 
         LiquidGlass {
             id: glass
             anchors.fill: parent
-            radius: Math.min(24, Math.min(full.height, full.width) * 0.45)
-            roundness: 4.6
+            radius: (root.variant === "circle" ? Math.min(full.height, full.width) / 2 : Math.min(24, Math.min(full.height, full.width) * 0.45))
+            roundness: (root.variant === "circle" && root.isExpanded !== true) ? 2.0 : 4.6   // "circle": tile redondo (Orbit/Hero/Island)
             widgetX: full.x
             widgetY: full.y
             screenWidth: root.width > 0 ? root.width : 1920
             screenHeight: root.height > 0 ? root.height : 1080
         }
 
+        // Tile pequeno ou redondo (Hero, Orbit, Island, Editorial, Four Corners): a chave não cabe → só o botão sol/lua
+        readonly property bool compact: root.variant === "circle" || full.width < 72
+
+        Rectangle {
+            visible: full.compact
+            anchors.centerIn: parent
+            width: Math.round(Math.min(full.width, full.height) * 0.62)
+            height: width
+            radius: width / 2
+            color: root.isSolid ? "#2b2d33" : "#ffffff"
+            border.width: 1
+            border.color: root.isSolid ? Qt.rgba(1, 1, 1, 0.35) : Qt.rgba(1, 1, 1, 0.6)
+            scale: tileMouse.pressed ? 0.88 : 1
+            Behavior on color { enabled: !GlassTheme.gaming; ColorAnimation { duration: 360 } }
+            Behavior on scale { enabled: !GlassTheme.gaming; NumberAnimation { duration: 140 } }
+            Item {
+                anchors.centerIn: parent
+                width: parent.width * 0.58; height: width
+                rotation: root.isSolid ? 0 : -90
+                Behavior on rotation { enabled: !GlassTheme.gaming; NumberAnimation { duration: 480; easing.type: Easing.OutBack; easing.overshoot: 1.0 } }
+                Image {
+                    anchors.fill: parent
+                    source: "file:///home/gabriel/.config/quickshell/assets/icons/sun-color.svg"
+                    sourceSize.width: 48; sourceSize.height: 48
+                    opacity: root.isSolid ? 0 : 1
+                    Behavior on opacity { enabled: !GlassTheme.gaming; NumberAnimation { duration: 260 } }
+                }
+                Image {
+                    anchors.fill: parent
+                    source: "file:///home/gabriel/.config/quickshell/assets/icons/moon-light.svg"
+                    sourceSize.width: 48; sourceSize.height: 48
+                    opacity: root.isSolid ? 1 : 0
+                    Behavior on opacity { enabled: !GlassTheme.gaming; NumberAnimation { duration: 260 } }
+                }
+            }
+        }
+
         // ── A chave ──────────────────────────────────────────────
         Item {
             id: sw
+            visible: !full.compact
             anchors.centerIn: parent
             width: Math.min(54, parent.width - 18)
             height: 32
@@ -67,8 +110,8 @@ Item {
                 color: root.isSolid ? "#d6d8df" : Qt.rgba(1, 1, 1, 0.26)
                 border.width: 1
                 border.color: root.isSolid ? Qt.rgba(1, 1, 1, 0.55) : Qt.rgba(1, 1, 1, 0.34)
-                Behavior on color { ColorAnimation { duration: 360 } }
-                Behavior on border.color { ColorAnimation { duration: 360 } }
+                Behavior on color { enabled: !GlassTheme.gaming; ColorAnimation { duration: 360 } }
+                Behavior on border.color { enabled: !GlassTheme.gaming; ColorAnimation { duration: 360 } }
             }
 
             // Botão deslizante (estica ao pressionar, como no iOS/macOS)
@@ -82,16 +125,16 @@ Item {
                 x: root.isSolid ? sw.width - width - 3 : 3
                 color: root.isSolid ? "#2b2d33" : "#ffffff"
 
-                Behavior on x { NumberAnimation { duration: 480; easing.type: Easing.OutBack; easing.overshoot: 1.25 } }
-                Behavior on width { NumberAnimation { duration: 140; easing.type: Easing.OutQuad } }
-                Behavior on color { ColorAnimation { duration: 360 } }
+                Behavior on x { enabled: !GlassTheme.gaming; NumberAnimation { duration: 480; easing.type: Easing.OutBack; easing.overshoot: 1.25 } }
+                Behavior on width { enabled: !GlassTheme.gaming; NumberAnimation { duration: 140; easing.type: Easing.OutQuad } }
+                Behavior on color { enabled: !GlassTheme.gaming; ColorAnimation { duration: 360 } }
 
                 // Sol (desligado) e lua (ligado) trocam com giro + fade
                 Item {
                     anchors.centerIn: parent
                     width: 16; height: 16
                     rotation: root.isSolid ? 0 : -90
-                    Behavior on rotation { NumberAnimation { duration: 480; easing.type: Easing.OutBack; easing.overshoot: 1.0 } }
+                    Behavior on rotation { enabled: !GlassTheme.gaming; NumberAnimation { duration: 480; easing.type: Easing.OutBack; easing.overshoot: 1.0 } }
 
                     Image {
                         anchors.fill: parent
@@ -99,8 +142,8 @@ Item {
                         sourceSize.width: 48; sourceSize.height: 48
                         opacity: root.isSolid ? 0 : 1
                         scale: root.isSolid ? 0.4 : 1
-                        Behavior on opacity { NumberAnimation { duration: 260 } }
-                        Behavior on scale { NumberAnimation { duration: 360; easing.type: Easing.OutBack } }
+                        Behavior on opacity { enabled: !GlassTheme.gaming; NumberAnimation { duration: 260 } }
+                        Behavior on scale { enabled: !GlassTheme.gaming; NumberAnimation { duration: 360; easing.type: Easing.OutBack } }
                     }
                     Image {
                         anchors.fill: parent
@@ -108,8 +151,8 @@ Item {
                         sourceSize.width: 48; sourceSize.height: 48
                         opacity: root.isSolid ? 1 : 0
                         scale: root.isSolid ? 1 : 0.4
-                        Behavior on opacity { NumberAnimation { duration: 260 } }
-                        Behavior on scale { NumberAnimation { duration: 360; easing.type: Easing.OutBack } }
+                        Behavior on opacity { enabled: !GlassTheme.gaming; NumberAnimation { duration: 260 } }
+                        Behavior on scale { enabled: !GlassTheme.gaming; NumberAnimation { duration: 360; easing.type: Easing.OutBack } }
                     }
                 }
             }

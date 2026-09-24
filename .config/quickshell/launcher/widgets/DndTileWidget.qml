@@ -14,15 +14,16 @@ Item {
         glass.setWallpaper(path);
     }
 
-    FontLoader {
-        id: sfRegular
-        source: Qt.resolvedUrl("fonts/sf_pro_display_regular.otf")
-    }
 
     property real targetX: 1618
     property real targetY: 688
     property real targetWidth: 76
     property real targetHeight: 76
+    property string variant: "classic"   // visual escolhido pelo layout ("classic" = o de sempre)
+    // variant "hidden": some com fade (o layout não usa este widget)
+    opacity: variant === "hidden" ? 0 : 1
+    visible: opacity > 0.01
+    Behavior on opacity { enabled: !GlassTheme.gaming; NumberAnimation { duration: 260 } }
 
     property bool isDnd: false
 
@@ -37,19 +38,19 @@ Item {
         width: root.targetWidth
         height: root.targetHeight
 
-        Behavior on x { NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
-        Behavior on y { NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
-        Behavior on width { NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
-        Behavior on height { NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
+        Behavior on x { enabled: !GlassTheme.gaming; NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
+        Behavior on y { enabled: !GlassTheme.gaming; NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
+        Behavior on width { enabled: !GlassTheme.gaming; NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
+        Behavior on height { enabled: !GlassTheme.gaming; NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
 
         scale: tileMouse.pressed ? 0.92 : (tileMouse.containsMouse ? 1.04 : 1.0)
-        Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
+        Behavior on scale { enabled: !GlassTheme.gaming; NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
 
         LiquidGlass {
             id: glass
             anchors.fill: parent
-            radius: Math.min(24, Math.min(full.height, full.width) * 0.45)
-            roundness: 4.6
+            radius: (root.variant === "circle" ? Math.min(full.height, full.width) / 2 : Math.min(24, Math.min(full.height, full.width) * 0.45))
+            roundness: (root.variant === "circle" && root.isExpanded !== true) ? 2.0 : 4.6   // "circle": tile redondo (Orbit/Hero/Island)
             widgetX: full.x
             widgetY: full.y
             screenWidth: root.width > 0 ? root.width : 1920
@@ -70,8 +71,8 @@ Item {
                 border.width: 1
                 border.color: root.isDnd ? Qt.rgba(1, 1, 1, 0.45) : Qt.rgba(1, 1, 1, 0.15)
 
-                Behavior on color { ColorAnimation { duration: 180 } }
-                Behavior on border.color { ColorAnimation { duration: 180 } }
+                Behavior on color { enabled: !GlassTheme.gaming; ColorAnimation { duration: 180 } }
+                Behavior on border.color { enabled: !GlassTheme.gaming; ColorAnimation { duration: 180 } }
 
                 Image {
                     anchors.centerIn: parent
@@ -80,7 +81,7 @@ Item {
                     source: "file:///home/gabriel/.config/quickshell/assets/icons/bell.svg"
                     fillMode: Image.PreserveAspectFit
                     opacity: root.isDnd ? 1.0 : 0.70
-                    Behavior on opacity { NumberAnimation { duration: 180 } }
+                    Behavior on opacity { enabled: !GlassTheme.gaming; NumberAnimation { duration: 180 } }
                 }
             }
         }
@@ -119,7 +120,7 @@ Item {
                     Text {
                         text: "Do Not Disturb"
                         color: "#ffffff"
-                        font.family: sfRegular.name
+                        font.family: "SF Pro Display"
                         font.pixelSize: 12
                         font.weight: Font.Bold
                     }
@@ -128,7 +129,7 @@ Item {
                         text: root.isDnd ? "Silence Active" : "Normal Mode"
                         color: "#ffffff"
                         opacity: 0.70
-                        font.family: sfRegular.name
+                        font.family: "SF Pro Display"
                         font.pixelSize: 9
                     }
                 }

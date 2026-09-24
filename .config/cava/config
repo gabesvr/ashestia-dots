@@ -19,14 +19,14 @@ method = noncurses
 
 [color]
 gradient = 1
-gradient_color_1 = '#ffb4a8'
-gradient_color_2 = '#ffb4a8'
-gradient_color_3 = '#ffdad4'
-gradient_color_4 = '#ffdad4'
-gradient_color_5 = '#e7bdb6'
-gradient_color_6 = '#5d3f3b'
-gradient_color_7 = '#dec48c'
-gradient_color_8 = '#dec48c'
+gradient_color_1 = '#bdc2ff'
+gradient_color_2 = '#bdc2ff'
+gradient_color_3 = '#e0e0ff'
+gradient_color_4 = '#e1e0f9'
+gradient_color_5 = '#c4c4dd'
+gradient_color_6 = '#444559'
+gradient_color_7 = '#e7b9d6'
+gradient_color_8 = '#e7b9d6'
 
 [smoothing]
 monstercat = 0

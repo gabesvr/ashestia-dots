@@ -2,6 +2,7 @@ import Quickshell
 import Quickshell.Wayland
 import Quickshell.Io
 import QtQuick
+import "../services"
 import QtQuick.Layouts
 
 Item {
@@ -11,49 +12,40 @@ Item {
     property alias cardItem: full
     property alias sharedBackdrop: glass.sharedBackdrop
 
-    FontLoader {
-        id: sfRegular
-        source: Qt.resolvedUrl("fonts/sf_pro_display_regular.otf")
-    }
-    FontLoader {
-        id: sfLight
-        source: Qt.resolvedUrl("fonts/SF-Pro-Display-Light.otf")
-    }
 
     // Animated Target Position (Driven by Layout Manager)
     property real targetX: 1620
     property real targetY: 55
     property real targetWidth: 250
+    property real targetHeight: 340    // usado pelas variantes (o card clássico tem altura fixa)
+    property string variant: "classic"   // visual escolhido pelo layout ("classic" = o de sempre)
+    // variant "hidden": some com fade (o layout não usa este widget)
+    opacity: variant === "hidden" ? 0 : 1
+    visible: opacity > 0.01
+    Behavior on opacity { enabled: !GlassTheme.gaming; NumberAnimation { duration: 260 } }
 
     function setWallpaper(path) {
         glass.setWallpaper(path);
     }
 
-    // Preset cities to cycle through on click
-    property var cityList: ["Porto", "Lausanne"]
-    property int cityIndex: 0
-
-    WeatherData {
-        id: weatherData
-        location: weatherWindow.cityList[weatherWindow.cityIndex]
-    }
-
-    function cycleCity() {
-        cityIndex = (cityIndex + 1) % cityList.length;
-        weatherData.setLocation(cityList[cityIndex]);
-    }
+    // Dados do clima vêm do WeatherService (uma instância para todas as variantes)
+    readonly property var weatherData: WeatherService.data
+    function cycleCity() { WeatherService.cycleCity(); }
 
     // The Weather Card
     Item {
         id: full
+        opacity: vhost.active || weatherWindow.variant === "hidden" ? 0 : 1   // clássico some quando uma variante assume ou quando o layout esconde o widget (senão pisca no fade-out)
+        visible: opacity > 0.01
+        Behavior on opacity { enabled: !GlassTheme.gaming; NumberAnimation { duration: 200 } }
         x: weatherWindow.targetX
         y: weatherWindow.targetY
         width: weatherWindow.targetWidth
         height: 340
 
-        Behavior on x { NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
-        Behavior on y { NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
-        Behavior on width { NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
+        Behavior on x { enabled: !GlassTheme.gaming; NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
+        Behavior on y { enabled: !GlassTheme.gaming; NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
+        Behavior on width { enabled: !GlassTheme.gaming; NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
 
         LiquidGlass {
             id: glass
@@ -91,7 +83,7 @@ Item {
                         Text {
                             text: weatherData.cityName || weatherData.location
                             color: "#ffffff"
-                            font.family: sfRegular.name
+                            font.family: "SF Pro Display"
                             font.pixelSize: Math.round(full.baseFontSize * 1.18)
                             font.weight: Font.Medium
                             renderType: Text.NativeRendering
@@ -111,7 +103,7 @@ Item {
                     Text {
                         text: (weatherData.currentTemp !== "--" ? weatherData.currentTemp : "22") + "°"
                         color: "#ffffff"
-                        font.family: sfLight.name
+                        font.family: "SF Pro Display"
                         font.pixelSize: Math.round(full.baseFontSize * 3.8)
                         font.weight: Font.Thin
                         renderType: Text.NativeRendering
@@ -135,7 +127,7 @@ Item {
                         anchors.right: parent.right
                         text: weatherData.condition || "Overcast"
                         color: "#ffffff"
-                        font.family: sfRegular.name
+                        font.family: "SF Pro Display"
                         font.pixelSize: full.baseFontSize
                         font.weight: Font.Medium
                         renderType: Text.NativeRendering
@@ -146,7 +138,7 @@ Item {
                         text: "H:" + (weatherData.highTemp !== "--" ? weatherData.highTemp : "32") + "°  L:" + (weatherData.lowTemp !== "--" ? weatherData.lowTemp : "20") + "°"
                         color: "#ffffff"
                         opacity: 0.70
-                        font.family: sfRegular.name
+                        font.family: "SF Pro Display"
                         font.pixelSize: full.baseFontSize
                         font.weight: Font.Normal
                         renderType: Text.NativeRendering
@@ -174,7 +166,7 @@ Item {
                     { displayTime: "5 PM",  iconName: "cloudy", temp: "30" }
                 ]
                 iconSet: "mono-light"
-                fontFamily: sfRegular.name
+                fontFamily: "SF Pro Display"
                 baseFontSize: full.baseFontSize
             }
 
@@ -199,7 +191,7 @@ Item {
                 overallLow: weatherData.dailyForecast.length > 0 ? weatherData.overallLow : 16
                 overallHigh: weatherData.dailyForecast.length > 0 ? weatherData.overallHigh : 31
                 iconSet: "mono-light"
-                fontFamily: sfRegular.name
+                fontFamily: "SF Pro Display"
                 fontSize: full.baseFontSize
                 iconNameForCode: function(code, night) { return weatherData.iconNameForCode(code, night) }
             }
@@ -237,5 +229,19 @@ Item {
                 glass.mouseV = -1;
             }
         }
+    }
+
+    // Visuais alternativos escolhidos pelo layout (widgets/variants/)
+    VariantHost {
+        id: vhost
+        variant: weatherWindow.variant
+        sources: ({ line: Qt.resolvedUrl("variants/WeatherLine.qml"), number: Qt.resolvedUrl("variants/WeatherNumber.qml"), compact: Qt.resolvedUrl("variants/WeatherCompact.qml"), text: Qt.resolvedUrl("variants/WeatherText.qml") })
+        targetX: weatherWindow.targetX
+        targetY: weatherWindow.targetY
+        targetWidth: weatherWindow.targetWidth
+        targetHeight: weatherWindow.targetHeight
+        sharedBackdrop: weatherWindow.sharedBackdrop
+        screenW: weatherWindow.width > 0 ? weatherWindow.width : 1920
+        screenH: weatherWindow.height > 0 ? weatherWindow.height : 1200
     }
 }

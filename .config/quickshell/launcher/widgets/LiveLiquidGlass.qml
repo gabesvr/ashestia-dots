@@ -25,7 +25,7 @@ Item {
     property real mouseV: -1
     property real mouseFade: 0
 
-    Behavior on mouseFade {
+    Behavior on mouseFade { enabled: !GlassTheme.gaming;
         NumberAnimation { duration: 180; easing.type: Easing.OutQuad }
     }
 

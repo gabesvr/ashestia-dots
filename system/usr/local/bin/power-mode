@@ -1,0 +1,64 @@
+#!/bin/bash
+# Modo de energia (tile de 3 posições do Quickshell). Nenhum modo faz overclock (isso é o Modo Gaming).
+#   power-mode silent|balanced|performance : aplica; com carregador ligado vira o "modo do carregador"
+#   power-mode ac      : volta ao último modo escolhido no carregador (ac_command do asusd)
+#   power-mode battery : Silencioso (bat_command do asusd)
+#   power-mode login   : aplica o modo certo para o estado atual (autostart do Hyprland)
+#   power-mode status  : silent|balanced|performance (lido de /sys/firmware/acpi/platform_profile)
+# O asusd NÃO troca mais de perfil sozinho (change_platform_profile_on_* = false em /etc/asusd/asusd.ron).
+AC_FILE=/var/lib/power-mode/ac
+CURVE="30c:45%,45c:60%,55c:75%,65c:88%,70c:95%,75c:100%,80c:100%,85c:100%"
+
+status() {
+    case "$(cat /sys/firmware/acpi/platform_profile 2>/dev/null)" in
+        quiet|low-power) echo silent ;;
+        performance) echo performance ;;
+        *) echo balanced ;;
+    esac
+}
+on_ac() { grep -qx 1 /sys/class/power_supply/A*/online 2>/dev/null; }
+ac_mode() { m=$(cat "$AC_FILE" 2>/dev/null); echo "${m:-balanced}"; }
+
+apply() {
+    local dgpu=0; [ -e /sys/bus/pci/devices/0000:01:00.0 ] && dgpu=1
+    case "$1" in
+    silent)
+        asusctl profile set Quiet >/dev/null 2>&1
+        powerprofilesctl set power-saver 2>/dev/null
+        asusctl fan-curve --mod-profile Performance --enable-fan-curves false >/dev/null 2>&1
+        boost=5 ;;   # mínimo aceito pelo firmware
+    balanced)
+        asusctl profile set Balanced >/dev/null 2>&1
+        powerprofilesctl set balanced 2>/dev/null
+        asusctl fan-curve --mod-profile Performance --enable-fan-curves false >/dev/null 2>&1
+        boost=15 ;;
+    performance)
+        asusctl profile set Performance >/dev/null 2>&1
+        powerprofilesctl set performance 2>/dev/null
+        asusctl fan-curve --mod-profile Performance --fan cpu --data "$CURVE" >/dev/null 2>&1
+        asusctl fan-curve --mod-profile Performance --fan gpu --data "$CURVE" >/dev/null 2>&1
+        asusctl fan-curve --mod-profile Performance --enable-fan-curves true >/dev/null 2>&1
+        boost=25 ;;
+    esac
+    echo "$boost" > /sys/class/firmware-attributes/asus-armoury/attributes/nv_dynamic_boost/current_value 2>/dev/null
+    if [ "$dgpu" = 1 ]; then
+        if [ "$1" = performance ]; then
+            nvidia-smi -lgc 1605,2600 >/dev/null 2>&1   # clock mínimo travado (antes era o nvidia-performance.service, sempre)
+        else
+            nvidia-smi -rgc >/dev/null 2>&1; nvidia-smi -rmc >/dev/null 2>&1; nvidia-smi -rac >/dev/null 2>&1
+        fi
+    fi
+}
+
+cmd="${1:-status}"
+[ "$cmd" = status ] && { status; exit 0; }
+[ "$EUID" -eq 0 ] || exec sudo -n "$0" "$@"
+mkdir -p "${AC_FILE%/*}"
+case "$cmd" in
+    silent|balanced|performance) on_ac && echo "$cmd" > "$AC_FILE"; apply "$cmd" ;;
+    ac) apply "$(ac_mode)" ;;
+    battery) apply silent ;;
+    login) if on_ac; then apply "$(ac_mode)"; else apply silent; fi ;;
+    *) echo "uso: power-mode silent|balanced|performance|ac|battery|login|status" >&2; exit 1 ;;
+esac
+status

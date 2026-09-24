@@ -15,19 +15,16 @@ Item {
         glass.setWallpaper(path);
     }
 
-    FontLoader {
-        id: sfRegular
-        source: Qt.resolvedUrl("fonts/sf_pro_display_regular.otf")
-    }
-    FontLoader {
-        id: sfProRounded
-        source: Qt.resolvedUrl("fonts/sf_pro_rounded.otf")
-    }
 
     property real targetX: 1794
     property real targetY: 688
     property real targetWidth: 76
     property real targetHeight: 76
+    property string variant: "classic"   // visual escolhido pelo layout ("classic" = o de sempre)
+    // variant "hidden": some com fade (o layout não usa este widget)
+    opacity: variant === "hidden" ? 0 : 1
+    visible: opacity > 0.01
+    Behavior on opacity { enabled: !GlassTheme.gaming; NumberAnimation { duration: 260 } }
 
     property bool isExpanded: false
     property var wallpaperList: []
@@ -99,25 +96,25 @@ Item {
         width: root.isExpanded ? 340 : root.targetWidth
         height: root.isExpanded ? 290 : root.targetHeight
 
-        Behavior on x { NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
-        Behavior on y { NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
-        Behavior on width { NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
-        Behavior on height { NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
+        Behavior on x { enabled: !GlassTheme.gaming; NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
+        Behavior on y { enabled: !GlassTheme.gaming; NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
+        Behavior on width { enabled: !GlassTheme.gaming; NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
+        Behavior on height { enabled: !GlassTheme.gaming; NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
 
         scale: (tileMouse.pressed && !root.isExpanded) ? 0.92 : ((tileMouse.containsMouse && !root.isExpanded) ? 1.04 : 1.0)
-        Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
+        Behavior on scale { enabled: !GlassTheme.gaming; NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
 
         LiquidGlass {
             id: glass
             anchors.fill: parent
-            radius: root.isExpanded ? 28 : Math.min(24, Math.min(full.height, full.width) * 0.45)
-            roundness: 4.6
+            radius: root.isExpanded ? 28 : (root.variant === "circle" ? Math.min(full.height, full.width) / 2 : Math.min(24, Math.min(full.height, full.width) * 0.45))
+            roundness: (root.variant === "circle" && root.isExpanded !== true) ? 2.0 : 4.6   // "circle": tile redondo (Orbit/Hero/Island)
             tint: root.isExpanded ? "#0a1024" : "#ffffff"
             tintAlpha: root.isExpanded ? 0.30 : 0.15
             lumaCap: root.isExpanded ? 0.50 : 0.80
-            Behavior on tint { ColorAnimation { duration: 320 } }
-            Behavior on tintAlpha { NumberAnimation { duration: 320 } }
-            Behavior on lumaCap { NumberAnimation { duration: 320 } }
+            Behavior on tint { enabled: !GlassTheme.gaming; ColorAnimation { duration: 320 } }
+            Behavior on tintAlpha { enabled: !GlassTheme.gaming; NumberAnimation { duration: 320 } }
+            Behavior on lumaCap { enabled: !GlassTheme.gaming; NumberAnimation { duration: 320 } }
             widgetX: full.x
             widgetY: full.y
             screenWidth: root.width > 0 ? root.width : 1920
@@ -185,7 +182,7 @@ Item {
                     Text {
                         text: "Wallpaper"
                         color: "#ffffff"
-                        font.family: sfRegular.name
+                        font.family: "SF Pro Display"
                         font.pixelSize: 12
                         font.weight: Font.Bold
                     }
@@ -194,7 +191,7 @@ Item {
                         text: "Click to browse"
                         color: "#ffffff"
                         opacity: 0.70
-                        font.family: sfRegular.name
+                        font.family: "SF Pro Display"
                         font.pixelSize: 9
                     }
                 }
@@ -210,7 +207,7 @@ Item {
             anchors.margins: 16
             visible: root.isExpanded || opacity > 0.01
             opacity: root.isExpanded ? 1 : 0
-            Behavior on opacity { NumberAnimation { duration: 240 } }
+            Behavior on opacity { enabled: !GlassTheme.gaming; NumberAnimation { duration: 240 } }
             clip: true
 
             PanelHeader {
@@ -263,7 +260,7 @@ Item {
                         border.width: modelData.active ? 2 : 0
                         border.color: "#ffffff"
                         scale: thumbMouse.pressed ? 0.95 : (thumbMouse.containsMouse ? 1.03 : 1.0)
-                        Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutQuad } }
+                        Behavior on scale { enabled: !GlassTheme.gaming; NumberAnimation { duration: 140; easing.type: Easing.OutQuad } }
 
                         Image {
                             anchors.fill: parent

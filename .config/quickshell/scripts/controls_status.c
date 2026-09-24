@@ -113,20 +113,18 @@ static void get_bluetooth(bool *bt_on) {
     }
 }
 
-static void get_turbo(bool *turbo) {
-    *turbo = false;
-    FILE *fp = popen("powerprofilesctl get 2>/dev/null || asusctl profile -p 2>/dev/null", "r");
+// Modo de energia (power-mode / tile de 3 posições): 0 = silencioso, 1 = equilibrado, 2 = desempenho.
+// Lido direto do sysfs (sem processo a cada ciclo).
+static void get_power(int *power) {
+    *power = 1;
+    FILE *fp = fopen("/sys/firmware/acpi/platform_profile", "r");
     if (fp) {
-        char buf[128];
+        char buf[32] = {0};
         if (fgets(buf, sizeof(buf), fp)) {
-            for (char *p = buf; *p; ++p) {
-                if (*p >= 'A' && *p <= 'Z') *p += 32;
-            }
-            if (strstr(buf, "performance") || strstr(buf, "turbo")) {
-                *turbo = true;
-            }
+            if (strncmp(buf, "quiet", 5) == 0 || strncmp(buf, "low-power", 9) == 0) *power = 0;
+            else if (strncmp(buf, "performance", 11) == 0) *power = 2;
         }
-        pclose(fp);
+        fclose(fp);
     }
 }
 
@@ -185,7 +183,7 @@ int main(void) {
         bool wifi_on = false;
         char wifi_ssid[256] = {0};
         bool bt_on = false;
-        bool turbo = false;
+        int power = 1;
         bool dnd = false;
         bool xwayland = false;
 
@@ -193,21 +191,21 @@ int main(void) {
         get_brightness(&br);
         get_wifi(&wifi_on, wifi_ssid, sizeof(wifi_ssid));
         get_bluetooth(&bt_on);
-        get_turbo(&turbo);
+        get_power(&power);
         get_dnd(&dnd);
         get_xwayland(&xwayland);
 
         char clean_ssid[256];
         escape_json_string(wifi_ssid, clean_ssid, sizeof(clean_ssid));
 
-        printf("{\"vol\":%.2f,\"muted\":%s,\"br\":%d,\"wifi_on\":%s,\"wifi_ssid\":\"%s\",\"bt_on\":%s,\"turbo\":%s,\"dnd\":%s,\"xwayland\":%s}\n",
+        printf("{\"vol\":%.2f,\"muted\":%s,\"br\":%d,\"wifi_on\":%s,\"wifi_ssid\":\"%s\",\"bt_on\":%s,\"power\":%d,\"dnd\":%s,\"xwayland\":%s}\n",
                vol,
                muted ? "true" : "false",
                br,
                wifi_on ? "true" : "false",
                clean_ssid,
                bt_on ? "true" : "false",
-               turbo ? "true" : "false",
+               power,
                dnd ? "true" : "false",
                xwayland ? "true" : "false");
 

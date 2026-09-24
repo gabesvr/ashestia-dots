@@ -8,7 +8,7 @@ require("env")
 
 -- Programas padrão (foot standalone lê foot.ini direto, 100% sólido e preto simples)
 local terminal    = "foot"
-local browser     = "firefox"
+local browser     = "zen-browser"
 local fileManager = "thunar"
 local islandMenu    = "/home/gabriel/.local/bin/island-toggle"     -- QuickShell Control Center / Island
 
@@ -17,21 +17,52 @@ local islandMenu    = "/home/gabriel/.local/bin/island-toggle"     -- QuickShell
 ---- MONITORS ----
 ------------------
 
--- Monitor interno: display do laptop FA607 (1920x1200@144Hz, escala 1.25 para legibilidade em 16")
-hl.monitor({
-output   = "eDP-1",
-mode     = "1920x1200@144",
-position = "0x0",
-scale    = 1.25,
-bitdepth = 8,
-vrr      = 0,
-})
+-- Monitores: com o AOC 24G4 (HDMI) ligado, ele vira a unica tela (1080p @ 180 Hz, escala 1)
+-- e o display do laptop (1920x1200@144, escala 1.5) e desligado. Sem HDMI, so o laptop.
+-- O conector da tela interna muda com a GPU (eDP-1 na NVIDIA, eDP-2 na AMD): descoberto em /sys/class/drm.
+-- Reavaliado no reload e a cada plug/unplug (monitor.added / monitor.removed).
+-- Modo "laptop" (arquivo monitor_mode, alternado por `monitor-mode` / tile do Quickshell): so a tela do notebook,
+-- HDMI desligado mesmo conectado (menos GPU/energia).
+local function laptop_only()
+  local f = io.open(os.getenv("HOME") .. "/.config/hypr/monitor_mode", "r")
+  if not f then return false end
+  local v = f:read("*l") or ""
+  f:close()
+  return v == "laptop"
+end
 
--- Monitor externo: AOC 24G4 desativado (usando apenas o monitor do laptop)
-hl.monitor({
-output   = "HDMI-A-1",
-disabled = true,
-})
+local function hdmi_connected()
+  local f = io.popen("cat /sys/class/drm/card*-HDMI-A-1/status 2>/dev/null")
+  if not f then return false end
+  local out = f:read("*a") or ""
+  f:close()
+  return out:find("^connected") ~= nil or out:find("\nconnected") ~= nil
+end
+
+local function internal_output()
+  local f = io.popen("ls /sys/class/drm/ 2>/dev/null | grep -o 'eDP-[0-9]*' | head -1")
+  local out = f and (f:read("*l") or "") or ""
+  if f then f:close() end
+  return out ~= "" and out or "eDP-1"
+end
+local EDP = internal_output()
+
+local function apply_monitors()
+  -- Antes de ligar um, empurra o outro para o lado (sem sobrepor em 0x0) e so depois desliga: sem aviso de overlap e nunca zero saidas.
+  if hdmi_connected() and not laptop_only() then
+    hl.monitor({ output = EDP, mode = "1920x1200@144", position = "2000x0", scale = 1.5, bitdepth = 8, vrr = 0 })
+    hl.monitor({ output = "HDMI-A-1", mode = "1920x1080@180", position = "0x0", scale = 1, bitdepth = 8, vrr = 0, disabled = false })
+    hl.monitor({ output = EDP, disabled = true })
+  else
+    hl.monitor({ output = "HDMI-A-1", mode = "1920x1080@180", position = "2000x0", scale = 1, bitdepth = 8, vrr = 0 })
+    hl.monitor({ output = EDP, mode = "1920x1200@144", position = "0x0", scale = 1.5, bitdepth = 8, vrr = 0, disabled = false })
+    hl.monitor({ output = "HDMI-A-1", disabled = true })
+  end
+end
+
+apply_monitors()
+hl.on("monitor.added",   function() hl.exec_cmd("sleep 1 && hyprctl reload") end)
+hl.on("monitor.removed", function() hl.exec_cmd("sleep 1 && hyprctl reload") end)
 
 
 ---------------------
@@ -62,8 +93,9 @@ hl.exec_cmd("gsettings set org.gnome.desktop.interface icon-theme 'WhiteSur-dark
 -- hl.exec_cmd("thunar --daemon")
 -- Aplicar gaming mode
 hl.exec_cmd("sudo /usr/local/bin/gaming-mode.sh")
--- Garantir backlight da tela do laptop ativo (eDP-1 ativa)
-hl.exec_cmd("brightnessctl -d nvidia_0 set 80%")
+hl.exec_cmd("sudo -n /usr/local/bin/power-mode login")   -- perfil de energia certo p/ carregador/bateria (tile de 3 posições)
+-- Garantir backlight da tela do laptop ativo (tela interna ativa)
+hl.exec_cmd("brightnessctl -c backlight set 80%")   -- nvidia_0 (modo NVIDIA) ou amdgpu_bl* (modo AMD)
 end)
 
 
@@ -106,7 +138,9 @@ end
 
 hl.config({
     render = {
-        direct_scanout = 1,
+        -- 0: com scanout direto o jogo fica preso aos Hz do monitor (buffer segurado pelo KMS
+        -- até o vblank, tearing não engata) → FPS cravado em 180. Compondo, o FPS fica livre.
+        direct_scanout = 0,
     },
     xwayland = {
         enabled = xwayland_enabled,
@@ -199,7 +233,7 @@ hl.animation({ leaf = "specialWorkspaceOut", enabled = true, speed = 1, spring =
 
 hl.config({
 input = {
-kb_layout   = "es",
+kb_layout   = "us",
 kb_variant  = "",
 kb_model    = "",
 kb_options  = "",
@@ -245,6 +279,13 @@ natural_scroll= true,
 -- Mouse AJAZZ 2.4G 8K (8000Hz Polling Rate / Raw 1:1 / Zero Latência)
 hl.device({
 name          = "-------ajazz-2.4g-8k",
+accel_profile = "flat",
+sensitivity   = 0.0,
+})
+
+-- Mouse Razer DeathAdder Essential (1000Hz / Raw 1:1 / sem aceleração)
+hl.device({
+name          = "razer-razer-deathadder-essential",
 accel_profile = "flat",
 sensitivity   = 0.0,
 })
@@ -315,7 +356,7 @@ local mainMod = "SUPER"
 hl.bind(mainMod .. " + Return",        hl.dsp.exec_cmd(terminal))                             -- normal terminal (tiled / sem float)
 hl.bind(mainMod .. " + KP_Enter",      hl.dsp.exec_cmd(terminal))                             -- normal terminal (numpad enter)
 hl.bind(mainMod .. " + T",             hl.dsp.exec_cmd(terminal .. " --app-id=foot-float"))   -- terminal no float
-hl.bind(mainMod .. " + W",             hl.dsp.exec_cmd(browser))    -- firefox
+hl.bind(mainMod .. " + W",             hl.dsp.exec_cmd(browser))    -- zen browser
 hl.bind(mainMod .. " + E",             hl.dsp.exec_cmd(fileManager))-- thunar
 hl.bind(mainMod .. " + A",             hl.dsp.exec_cmd(islandMenu .. " launchpad"))           -- macOS Launchpad Fullscreen
 hl.bind(mainMod .. " + Space",         hl.dsp.exec_cmd(islandMenu .. " launchpad"))           -- macOS Launchpad / Spotlight
@@ -336,6 +377,11 @@ hl.bind(mainMod .. " + ALT + 2",       hl.dsp.exec_cmd(islandMenu .. " layout 2"
 hl.bind(mainMod .. " + ALT + 3",       hl.dsp.exec_cmd(islandMenu .. " layout 3"))    -- Layout 3: Smart Sidebar
 hl.bind(mainMod .. " + ALT + 4",       hl.dsp.exec_cmd(islandMenu .. " layout 4"))    -- Layout 4: Four Corners
 hl.bind(mainMod .. " + ALT + 5",       hl.dsp.exec_cmd(islandMenu .. " layout 5"))    -- Layout 5: Creative Studio
+hl.bind(mainMod .. " + ALT + 6",       hl.dsp.exec_cmd(islandMenu .. " layout 6"))    -- Layout 6: Hero Clock
+hl.bind(mainMod .. " + ALT + 7",       hl.dsp.exec_cmd(islandMenu .. " layout 7"))    -- Layout 7: Bento
+hl.bind(mainMod .. " + ALT + 8",       hl.dsp.exec_cmd(islandMenu .. " layout 8"))    -- Layout 8: Orbit
+hl.bind(mainMod .. " + ALT + 9",       hl.dsp.exec_cmd(islandMenu .. " layout 9"))    -- Layout 9: Island
+hl.bind(mainMod .. " + ALT + 0",       hl.dsp.exec_cmd(islandMenu .. " layout 10"))    -- Layout 10: Editorial
 hl.bind(mainMod .. " + V",             hl.dsp.window.pseudo())
 hl.bind(mainMod .. " + P",             hl.dsp.layout("togglesplit"))
 
@@ -348,6 +394,7 @@ hl.bind("SUPER + Print",       hl.dsp.exec_cmd("/home/gabriel/.local/bin/screens
 hl.bind(mainMod .. " + SHIFT + R",     hl.dsp.exec_cmd("hyprctl reload"))
 
 -- Exit / Shutdown
+hl.bind(mainMod .. " + SHIFT + P",     hl.dsp.exec_cmd("/home/gabriel/.local/bin/island-toggle monitor"))
 hl.bind(mainMod .. " + SHIFT + M",     hl.dsp.exec_cmd("command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch exit"))
 
 -- === Navegação de foco: HJKL (vim) + setas ===
@@ -430,6 +477,9 @@ hl.bind(mainMod .. " + PERIOD",        hl.dsp.exec_cmd("hyprctl dispatch focusmo
 hl.bind(mainMod .. " + SHIFT + COMMA", hl.dsp.window.move({ monitor = "l" }))
 hl.bind(mainMod .. " + SHIFT + PERIOD",hl.dsp.window.move({ monitor = "r" }))
 
+-- === Gravação de tela (GPU Screen Recorder / NVENC — ~/.local/bin/gravar) ===
+hl.bind(mainMod .. " + F9",            hl.dsp.exec_cmd("/home/gabriel/.local/bin/gravar rec"))     -- liga/para gravação
+
 -- === Scratchpad (SUPER+D / SUPER+SHIFT+D para não conflitar com screenshot) ===
 hl.bind(mainMod .. " + D",             hl.dsp.workspace.toggle_special("magic"))
 hl.bind(mainMod .. " + SHIFT + D",     hl.dsp.window.move({ workspace = "special:magic" }))
@@ -460,18 +510,17 @@ hl.bind("XF86AudioPlay",        hl.dsp.exec_cmd("playerctl play-pause"),  { lock
 hl.bind("XF86AudioPrev",        hl.dsp.exec_cmd("playerctl previous"),    { locked = true })
 
 -- === Gaming Mode toggle === (SUPER+G já é usado para alternar layouts dos widgets)
-hl.bind(mainMod .. " + SHIFT + G", hl.dsp.exec_cmd("sudo /usr/local/bin/gaming-mode.sh"), { locked = false })
+hl.bind(mainMod .. " + SHIFT + G", hl.dsp.exec_cmd("systemd-run --user --scope --quiet --collect /home/gabriel/.local/bin/gaming-mode toggle")) -- Modo Gaming liga/desliga (desliga o Quickshell)
 
 
 --------------------------------
 ---- WINDOWS AND WORKSPACES ----
 --------------------------------
 
--- Mapear todas as workspaces 1-10 para o monitor ativo (eDP-1)
+-- Workspaces 1-10 seguem o monitor ativo (so ha um ligado por vez)
 for i = 1, 10 do
 hl.workspace_rule({
 workspace = tostring(i),
-monitor   = "eDP-1",
 default   = (i == 1),
 })
 end
@@ -566,11 +615,70 @@ border_size = 0,
 rounding  = 0,
 })
 
+-- Overwatch (Proton/Xwayland, classe steam_app_2357570): tela cheia + tearing → FPS acima dos 180 Hz e sem atraso do compositor
+hl.window_rule({
+name        = "overwatch-game",
+match       = { class = "^steam_app_2357570$" },
+fullscreen  = true,
+immediate   = true,
+border_size = 0,
+rounding    = 0,
+})
+
+-- Resident Evil 2 (Proton/Xwayland, classe steam_app_883710): tela cheia + tearing → FPS acima dos 180 Hz
+hl.window_rule({
+name        = "re2-game",
+match       = { class = "^steam_app_883710$" },
+fullscreen  = true,
+immediate   = true,
+border_size = 0,
+rounding    = 0,
+})
+
 -- Minecraft & PrismLauncher: FPS máximo destravado e menor latência de entrada
 hl.window_rule({
 name      = "minecraft-fps",
-match     = { class = "^([mM]inecraft.*|[nN]et\\.minecraft.*|org\\.prismlauncher.*|[jJ]ava.*)$" },
+match     = { class = "^([mM]inecraft.*|[nN]et\\.minecraft.*|com\\.mojang\\.minecraft.*|org\\.prismlauncher.*|[jJ]ava.*)$" },
 immediate = true,
+})
+
+-- Minecraft (Prism / Fabric, classe com.mojang.minecraft): tela cheia automática.
+-- O Hyprland só faz tearing (FPS acima dos Hz do monitor) em janela fullscreen.
+hl.window_rule({
+name        = "minecraft-game-fullscreen",
+match       = { class = "^com\\.mojang\\.minecraft.*" },
+fullscreen  = true,
+immediate   = true,
+border_size = 0,
+rounding    = 0,
+})
+
+-- Lunar Client (Minecraft 1.8.9 / 26.x): Fullscreen exclusivo automático, tearing ativado, sem bordas
+hl.window_rule({
+name        = "lunar-client-game-class",
+match       = { class = "^Lunar Client [0-9].*" },
+fullscreen  = true,
+immediate   = true,
+border_size = 0,
+rounding    = 0,
+})
+
+hl.window_rule({
+name        = "lunar-client-game-title",
+match       = { title = "^Lunar Client [0-9].*" },
+fullscreen  = true,
+immediate   = true,
+border_size = 0,
+rounding    = 0,
+})
+
+-- Notificações (mako, namespace "notifications"): vidro com blur + entrada deslizando da direita
+hl.layer_rule({
+name = "mako-glass",
+match = { namespace = "notifications" },
+blur = true,
+ignore_alpha = 0.01,
+animation = "slide right",
 })
 
 -- QuickShell Layer Rules: Desativa animação externa do Hyprland (animações próprias em QML) + Blur
@@ -597,10 +705,10 @@ hl.window_rule({
     rounding = 20,
 })
 
--- Browser (Firefox): Padrão normal / 100% Sólido (Sem vidro ou transparência)
+-- Browser (Zen): Padrão normal / 100% Sólido (Sem vidro ou transparência)
 hl.window_rule({
-    name    = "firefox-solid",
-    match   = { class = "^(firefox|org\\.mozilla\\.firefox)$" },
+    name    = "browser-solid",
+    match   = { class = "^(zen|zen-browser)$" },
     opacity = "1.0 1.0",
 })
 
@@ -608,3 +716,38 @@ hl.window_rule({
 
 
 
+
+-- USOLINUX: sempre flutuante e centralizado
+hl.window_rule({
+    name   = "usolinux-float",
+    match  = { title = "^(USOLINUX)$" },
+    float  = true,
+    center = true,
+    size   = "820 540",
+})
+
+
+------------------------
+---- MODO GAMING ----
+------------------------
+-- Ligado pelo tile "Gaming" do Quickshell (~/.local/bin/gaming-mode): sem animações,
+-- blur, sombra nem dim — tudo instantâneo. Lido a cada reload.
+local gm_f = io.open("/home/gabriel/.config/hypr/gaming_mode", "r")
+if gm_f then
+    local gm = gm_f:read("*all") or ""
+    gm_f:close()
+    if gm:match("on") then
+        hl.config({
+            animations = { enabled = false },
+            decoration = {
+                blur = { enabled = false },
+                shadow = { enabled = false },
+                dim_inactive = false,
+            },
+            misc = {
+                animate_mouse_windowdragging = false,
+                animate_manual_resizes = false,
+            },
+        })
+    end
+end

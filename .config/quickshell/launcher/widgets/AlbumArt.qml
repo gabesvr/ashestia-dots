@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Effects
 
 Item {
     id: art
@@ -32,27 +31,13 @@ Item {
         layer.enabled: true
     }
 
-    // Rounded mask
-    Item {
-        id: roundMask
+    // Capa recortada com cantos arredondados e borda suavizada (shaders/roundimg.frag)
+    ShaderEffect {
         anchors.fill: parent
-        layer.enabled: true
-        visible: false
-
-        Rectangle {
-            anchors.fill: parent
-            radius: art.radius
-            color: "white"
-        }
-    }
-
-    // Masked artwork
-    MultiEffect {
-        anchors.fill: parent
-        source: coverImage
-        maskEnabled: true
-        maskSource: roundMask
-        visible: true
+        property variant source: coverImage
+        property size itemSize: Qt.size(width, height)
+        property real radius: art.radius
+        fragmentShader: "shaders/roundimg.frag.qsb"
     }
 
     // Subtle inner border highlight

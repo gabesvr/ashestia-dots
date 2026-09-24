@@ -1,0 +1,23 @@
+[Unit]
+Description=QuickShell Desktop Daemon
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=simple
+Environment="LD_PRELOAD=/usr/lib/libjemalloc.so.2"
+Environment="MALLOC_CONF=background_thread:true,dirty_decay_ms:500,muzzy_decay_ms:1000"
+Environment="MALLOC_ARENA_MAX=1"
+Environment="MALLOC_TRIM_THRESHOLD_=65536"
+Environment="MALLOC_MMAP_THRESHOLD_=65536"
+# Loop threaded: anima no vsync real do monitor (180 Hz). O "basic" (padrão no NVIDIA) prendia em ~60 fps.
+Environment="QSG_RENDER_LOOP=threaded"
+ExecStart=/usr/bin/quickshell -p /home/gabriel/.config/quickshell/launcher
+Restart=on-failure
+RestartSec=1
+MemoryAccounting=yes
+MemoryHigh=350M
+MemoryMax=400M
+
+[Install]
+WantedBy=graphical-session.target

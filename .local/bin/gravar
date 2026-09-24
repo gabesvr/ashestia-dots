@@ -1,0 +1,31 @@
+#!/bin/bash
+# Gravação de tela leve (GPU Screen Recorder, NVENC). Uso:
+#   gravar rec      liga/desliga a gravação da tela -> ~/Videos/Gravações
+#   gravar status
+# Áudio: faixa 1 = som do sistema, faixa 2 = microfone (separadas).
+
+REC_DIR="$HOME/Videos/Gravações"
+mkdir -p "$REC_DIR"
+
+# monitor com foco (HDMI-A-1 ou eDP-1)
+mon=$(hyprctl monitors -j | jq -r '.[] | select(.focused) | .name' | head -1)
+[ -n "$mon" ] || mon=focused
+
+rec_pid() { pgrep -f 'gpu-screen-recorder .*-o [^ ]*/Gravações/' ; }
+note()    { notify-send -a "Gravação" -i media-record -t 2500 "$@" 2>/dev/null; }
+
+case "${1:-rec}" in
+rec)
+    if pid=$(rec_pid); then
+        kill -INT $pid; note "Gravação salva" "$REC_DIR"
+    else
+        f="$REC_DIR/$(date +%Y-%m-%d_%H-%M-%S).mp4"
+        setsid -f gpu-screen-recorder -w "$mon" -f 60 -k hevc -q very_high -tune performance -ac aac \
+            -a default_output -a default_input -cursor yes -o "$f" >/dev/null 2>&1
+        note "Gravando tela" "$mon — de novo o atalho para parar"
+    fi ;;
+status)
+    rec_pid >/dev/null && echo "gravando" || echo "parado" ;;
+*)
+    echo "uso: gravar rec|status" >&2; exit 1 ;;
+esac

@@ -12,6 +12,15 @@ if [ "$1" = "layout" ]; then
     CMD="layout:${2:-next}"
 fi
 
+# Modo Gaming: o Quickshell fica desligado. O launchpad vira o fuzzel (leve, sem daemon)
+# e os outros comandos são ignorados, para não religar o Quickshell no meio do jogo.
+if [ "$(cat "$HOME/.config/hypr/gaming_mode" 2>/dev/null)" = "on" ]; then
+    if [ "$CMD" = "launchpad" ]; then
+        pkill -x fuzzel || exec fuzzel
+    fi
+    exit 0
+fi
+
 [ -p "$PIPE" ] || mkfifo "$PIPE"
 
 # Garante que NUNCA existam duas instâncias de quickshell rodando simultaneamente

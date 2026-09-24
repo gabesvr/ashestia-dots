@@ -1,0 +1,2 @@
+SUBSYSTEM=="drm", KERNEL=="card*", DEVPATH=="*0000:01:00.0*", SYMLINK+="dri/nvidia-dgpu"
+SUBSYSTEM=="drm", KERNEL=="card*", DEVPATH=="*0000:65:00.0*", SYMLINK+="dri/amd-igpu"

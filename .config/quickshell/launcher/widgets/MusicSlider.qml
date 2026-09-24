@@ -45,7 +45,7 @@ Item {
             color: slider.trackColor
             opacity: slider.trackOpacity
 
-            Behavior on height {
+            Behavior on height { enabled: !GlassTheme.gaming;
                 NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
             }
         }
@@ -62,7 +62,7 @@ Item {
             opacity: 0.85
 
             Behavior on width {
-                enabled: !barMouse.pressed
+                enabled: !GlassTheme.gaming && !barMouse.pressed
                 NumberAnimation { duration: 180 }
             }
         }

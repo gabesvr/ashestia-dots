@@ -30,15 +30,15 @@ Item {
     property real innerShade: 0.0
     // Tema sólido (botão-chave): 0 = vidro, 1 = cinza-escuro. Transição em "onda" a partir do botão.
     property real solidT: 0
-    Behavior on solidT { enabled: GlassTheme.animate; NumberAnimation { duration: 520; easing.type: Easing.InOutCubic } }
+    Behavior on solidT { enabled: !GlassTheme.gaming && (GlassTheme.animate); NumberAnimation { duration: 520; easing.type: Easing.InOutCubic } }
 
     Timer {
         id: rippleTimer
         repeat: false
-        onTriggered: glass.solidT = GlassTheme.solid ? 1 : 0
+        onTriggered: glass.solidT = GlassTheme.effectiveSolid ? 1 : 0
     }
     function _applySolid() {
-        if (!GlassTheme.animate) { glass.solidT = GlassTheme.solid ? 1 : 0; return; }
+        if (!GlassTheme.animate || GlassTheme.gaming) { glass.solidT = GlassTheme.effectiveSolid ? 1 : 0; return; }
         const cx = glass.widgetX + glass.width / 2 - GlassTheme.originX;
         const cy = glass.widgetY + glass.height / 2 - GlassTheme.originY;
         rippleTimer.interval = Math.min(650, Math.sqrt(cx * cx + cy * cy) * 0.5);
@@ -46,9 +46,9 @@ Item {
     }
     Connections {
         target: GlassTheme
-        function onSolidChanged() { glass._applySolid(); }
+        function onEffectiveSolidChanged() { glass._applySolid(); }
     }
-    Component.onCompleted: glass.solidT = GlassTheme.solid ? 1 : 0
+    Component.onCompleted: glass.solidT = GlassTheme.effectiveSolid ? 1 : 0
 
     property bool shadowEnabled: false
     property real shadowStrength: 0.045
@@ -77,7 +77,7 @@ Item {
     property real mouseV: -1
     property real mouseFade: 0
 
-    Behavior on mouseFade {
+    Behavior on mouseFade { enabled: !GlassTheme.gaming;
         NumberAnimation { duration: 180; easing.type: Easing.OutQuad }
     }
 
@@ -111,7 +111,7 @@ Item {
     // Sombra suave sob o vidro (analítica, sem passes de blur)
     ShaderEffect {
         id: shadowFx
-        visible: glass.shadowEnabled && glass.width > 1 && glass.height > 1
+        visible: !GlassTheme.gaming && glass.shadowEnabled && glass.width > 1 && glass.height > 1
         z: -1
         readonly property real padPx: glass.shadowBlur * 1.6 + glass.shadowOffset
         x: -padPx
@@ -132,6 +132,7 @@ Item {
     ShaderEffect {
         id: glassShader
         anchors.fill: parent
+        visible: !GlassTheme.gaming
         fragmentShader: Qt.resolvedUrl("shaders/liquidglass.frag.qsb")
 
         property variant backdrop: glass.sharedBackdrop ? glass.sharedBackdrop : (fallbackBlurLoader.item ? fallbackBlurLoader.item.outTexture : null)
@@ -153,6 +154,14 @@ Item {
         property vector4d style: Qt.vector4d(glass.saturation, glass.rim, glass.sheen, glass.innerShade)
         property vector2d uvOffset: glass.sharedBackdrop ? glass._uvOff : Qt.vector2d(0, 0)
         property vector2d uvScale: glass.sharedBackdrop ? glass._uvSc : Qt.vector2d(1, 1)
+    }
+
+    // Modo gaming: cartão sólido simples no lugar do shader (zero custo de GPU)
+    Rectangle {
+        anchors.fill: parent
+        visible: GlassTheme.gaming
+        radius: glass.radius
+        color: "#2b2d33"
     }
 
     // ── Fallback Blur Pipeline Loader (ONLY instantiated if sharedBackdrop is null) ──

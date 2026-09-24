@@ -20,7 +20,7 @@ Item {
         width: btn.iconSize
         height: btn.iconSize
         scale: btn.activeHover && !hoverArea.pressed ? 1.08 : 1.0
-        Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutQuad } }
+        Behavior on scale { enabled: !GlassTheme.gaming; NumberAnimation { duration: 120; easing.type: Easing.OutQuad } }
 
         layer.enabled: true
         layer.effect: MultiEffect {

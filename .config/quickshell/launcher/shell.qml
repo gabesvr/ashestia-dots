@@ -4,26 +4,29 @@ import Quickshell.Io
 import QtQuick
 
 import "./widgets"
+import "Layouts.js" as Layouts
+import "./services"
 
 // Daemon QuickShell — Liquid Glass Modular Desktop Widgets
 ShellRoot {
     id: shellRoot
 
-    FontLoader {
-        id: sfRegular
-        source: Qt.resolvedUrl("widgets/fonts/sf_pro_display_regular.otf")
-    }
 
     // ── System States (Single Source of Truth) ────────────────
-    property real systemVolume: 0.5
-    property bool systemVolumeMuted: false
-    property int systemBrightness: 80
-    property bool systemWifiOn: true
-    property string systemWifiSsid: "Wi-Fi"
-    property bool systemBtOn: false
-    property bool systemTurbo: false
-    property bool systemDnd: false
-    property bool systemXwayland: false
+    property bool systemLaptopOnly: false
+
+    Process {
+        id: monitorModeProc
+        command: ["/home/gabriel/.local/bin/monitor-mode", "status"]
+        running: true
+        stdout: SplitParser { onRead: (line) => shellRoot.systemLaptopOnly = (line.trim() === "laptop") }
+    }
+    function toggleMonitorMode() {
+        systemLaptopOnly = !systemLaptopOnly;
+        monitorModeProc.command = ["/home/gabriel/.local/bin/monitor-mode", systemLaptopOnly ? "laptop" : "auto"];
+        monitorModeProc.running = false;
+        monitorModeProc.running = true;
+    }
 
     Process { id: cmdRunner; running: false }
     function exec(cmd) {
@@ -34,15 +37,15 @@ ShellRoot {
 
     Process { id: volProc; running: false }
     function setVolume(pct) {
-        systemVolume = pct;
-        systemVolumeMuted = (pct === 0);
+        SystemStatus.volume = pct;
+        SystemStatus.muted = (pct === 0);
         volProc.command = ["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", Math.round(pct * 100) + "%"];
         volProc.running = false;
         volProc.running = true;
     }
 
     function toggleMute() {
-        systemVolumeMuted = !systemVolumeMuted;
+        SystemStatus.muted = !SystemStatus.muted;
         volProc.command = ["wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@", "toggle"];
         volProc.running = false;
         volProc.running = true;
@@ -50,42 +53,44 @@ ShellRoot {
 
     Process { id: brProc; running: false }
     function setBrightness(pct) {
-        systemBrightness = pct;
+        SystemStatus.brightness = pct;
         brProc.command = ["brightnessctl", "set", pct + "%"];
         brProc.running = false;
         brProc.running = true;
     }
 
     function toggleWifi() {
-        systemWifiOn = !systemWifiOn;
-        exec("nmcli radio wifi " + (systemWifiOn ? "on" : "off"));
+        SystemStatus.wifiOn = !SystemStatus.wifiOn;
+        exec("nmcli radio wifi " + (SystemStatus.wifiOn ? "on" : "off"));
     }
 
     function toggleBt() {
-        systemBtOn = !systemBtOn;
+        SystemStatus.btOn = !SystemStatus.btOn;
         exec("rfkill toggle bluetooth");
     }
 
     Process {
         id: turboProc
         running: false
-        onExited: statusPoller.running = true
+        onExited: SystemStatus.restart()
     }
-    function toggleTurbo() {
-        systemTurbo = !systemTurbo;
-        turboProc.command = ["sh", "-c", systemTurbo ? "powerprofilesctl set performance 2>/dev/null || asusctl profile -P Performance 2>/dev/null" : "powerprofilesctl set balanced 2>/dev/null || asusctl profile -P Balanced 2>/dev/null || asusctl profile -P Quiet 2>/dev/null"];
+    function setPowerMode(m) {
+        SystemStatus.power = m;
+        SystemStatus.powerHoldUntil = Date.now() + 3000;
+        turboProc.command = ["sudo", "-n", "/usr/local/bin/power-mode", ["silent", "balanced", "performance"][m]];
         turboProc.running = false;
         turboProc.running = true;
     }
+    function toggleTurbo() { setPowerMode((SystemStatus.power + 1) % 3); }   // FIFO "turbo": próximo modo
 
     Process {
         id: dndProc
         running: false
-        onExited: statusPoller.running = true
+        onExited: SystemStatus.restart()
     }
     function toggleDnd() {
-        systemDnd = !systemDnd;
-        dndProc.command = ["sh", "-c", systemDnd ? "makoctl mode -a do-not-disturb -a dnd && makoctl dismiss -a" : "makoctl mode -r do-not-disturb -r dnd"];
+        SystemStatus.dnd = !SystemStatus.dnd;
+        dndProc.command = ["sh", "-c", SystemStatus.dnd ? "makoctl mode -a do-not-disturb -a dnd && makoctl dismiss -a" : "makoctl mode -r do-not-disturb -r dnd"];
         dndProc.running = false;
         dndProc.running = true;
     }
@@ -93,7 +98,7 @@ ShellRoot {
     Process {
         id: xwaylandProc
         running: false
-        onExited: statusPoller.running = true
+        onExited: SystemStatus.restart()
     }
 
     property int xwaylandCountdown: 0
@@ -115,12 +120,13 @@ ShellRoot {
     }
 
     function toggleXwayland() {
+        if (shellRoot.gpuRestartPending) return;
         if (shellRoot.xwaylandRestartPending) {
             cancelXwaylandCountdown();
             return;
         }
-        const next = !systemXwayland;
-        systemXwayland = next;
+        const next = !SystemStatus.xwayland;
+        SystemStatus.xwayland = next;
         exec("sh -c 'echo " + (next ? "true" : "false") + " > /home/gabriel/.config/hypr/xwayland_state'");
         shellRoot.xwaylandCountdown = 5;
         shellRoot.xwaylandRestartPending = true;
@@ -131,8 +137,8 @@ ShellRoot {
         xwaylandRebootTimer.stop();
         shellRoot.xwaylandCountdown = 0;
         shellRoot.xwaylandRestartPending = false;
-        const reverted = !systemXwayland;
-        systemXwayland = reverted;
+        const reverted = !SystemStatus.xwayland;
+        SystemStatus.xwayland = reverted;
         exec("sh -c 'echo " + (reverted ? "true" : "false") + " > /home/gabriel/.config/hypr/xwayland_state'");
     }
 
@@ -141,6 +147,54 @@ ShellRoot {
         shellRoot.xwaylandCountdown = 0;
         shellRoot.xwaylandRestartPending = false;
         exec("systemctl reboot");
+    }
+
+    // ── GPU (gpu-mode): só NVIDIA <-> só AMD. Troca = firmware + reboot, com contagem e Cancelar ──
+    property string systemGpuMode: "nvidia"    // modo em uso (gravado no boot pelo igpu-guard)
+    property string gpuTarget: ""              // modo pedido durante a contagem
+    property int gpuCountdown: 0
+    readonly property bool gpuRestartPending: gpuCountdown > 0
+    readonly property bool rebootBannerOn: xwaylandRestartPending || gpuRestartPending
+
+    Process {
+        id: gpuStatusProc
+        command: ["/usr/local/bin/gpu-mode", "status"]
+        running: true
+        stdout: SplitParser { onRead: (line) => shellRoot.systemGpuMode = line.trim().split(" ")[0] }
+    }
+    Process {
+        id: gpuSwitchProc
+        running: false
+        stderr: SplitParser { onRead: (line) => shellRoot.exec("notify-send -a GPU -u critical 'Troca de GPU falhou' '" + line.replace(/'/g, "") + "'") }
+    }
+    Timer {
+        id: gpuRebootTimer
+        interval: 1000
+        repeat: true
+        running: shellRoot.gpuCountdown > 0
+        onTriggered: {
+            shellRoot.gpuCountdown--;
+            if (shellRoot.gpuCountdown <= 0) shellRoot.applyGpuMode();
+        }
+    }
+    function toggleGpuMode() {
+        if (gpuRestartPending) { cancelGpuCountdown(); return; }
+        if (xwaylandRestartPending) return;
+        gpuTarget = systemGpuMode === "amd" ? "nvidia" : "amd";
+        gpuCountdown = 8;
+    }
+    function cancelGpuCountdown() {
+        gpuCountdown = 0;
+        gpuTarget = "";
+    }
+    function applyGpuMode() {
+        gpuRebootTimer.stop();
+        gpuCountdown = 0;
+        // gpu-mode grava o firmware e reinicia; se o firmware recusar, sai com erro (stderr -> notificação) e não reinicia
+        gpuSwitchProc.command = ["sudo", "-n", "/usr/local/bin/gpu-mode", gpuTarget];
+        gpuSwitchProc.running = false;
+        gpuSwitchProc.running = true;
+        gpuTarget = "";
     }
 
     Process {
@@ -154,39 +208,12 @@ ShellRoot {
         wpSwitcher.running = true;
     }
 
-    // Centralized Status Poller
-    Process {
-        id: statusPoller
-        command: ["/home/gabriel/.config/quickshell/scripts/controls_status"]
-        running: true
-        stdout: SplitParser {
-            onRead: (line) => {
-                try {
-                    const data = JSON.parse(line.trim());
-                    if (data.vol !== undefined) {
-                        shellRoot.systemVolume = data.vol;
-                        shellRoot.systemVolumeMuted = data.muted;
-                    }
-                    if (data.br !== undefined) {
-                        shellRoot.systemBrightness = data.br;
-                    }
-                    if (data.wifi_on !== undefined) shellRoot.systemWifiOn = data.wifi_on;
-                    if (data.wifi_ssid !== undefined) shellRoot.systemWifiSsid = data.wifi_ssid;
-                    if (data.bt_on !== undefined) shellRoot.systemBtOn = data.bt_on;
-                    if (data.turbo !== undefined) shellRoot.systemTurbo = data.turbo;
-                    if (data.dnd !== undefined) shellRoot.systemDnd = data.dnd;
-                    if (data.xwayland !== undefined) shellRoot.systemXwayland = data.xwayland;
-                } catch(e) {}
-            }
-        }
-    }
-
     Timer {
         interval: 2500
         repeat: true
         running: true
         onTriggered: {
-            if (!statusPoller.running) statusPoller.running = true;
+            SystemStatus.restart();
         }
     }
 
@@ -210,6 +237,8 @@ ShellRoot {
                     launchpad.toggleLaunchpad();
                 } else if (cmd === "wifi:dialog" || cmd === "wifi") {
                     wWifi.isExpanded = !wWifi.isExpanded;
+                } else if (cmd === "battery") {
+                    wBattery.isExpanded = !wBattery.isExpanded;
                 } else if (cmd === "bt:dialog" || cmd === "bt") {
                     wBt.isExpanded = !wBt.isExpanded;
                 } else if (cmd === "dnd" || cmd === "dnd:toggle" || cmd === "mode:dnd") {
@@ -220,10 +249,14 @@ ShellRoot {
                     wWallpaper.isExpanded = !wWallpaper.isExpanded;
                 } else if (cmd === "wallpaper" || cmd === "view:wallpaper" || cmd === "wallpapers") {
                     shellRoot.nextWallpaper();
+                } else if (cmd === "gaming" || cmd === "gaming:toggle") {
+                    GlassTheme.toggleGaming();
                 } else if (cmd === "turbo" || cmd === "turbo:toggle") {
                     shellRoot.toggleTurbo();
                 } else if (cmd === "xwayland" || cmd === "xwayland:toggle") {
                     shellRoot.toggleXwayland();
+                } else if (cmd === "monitor" || cmd === "monitor:toggle") {
+                    shellRoot.toggleMonitorMode();
                 } else if (cmd === "lyrics" || cmd === "music:lyrics") {
                     desktopMusic.toggleLyrics();
                 }
@@ -235,116 +268,11 @@ ShellRoot {
     property int currentLayout: 1
     property bool layoutReady: false
 
-    readonly property var tileKeys: ["wifi", "bt", "turbo", "dnd", "xwayland", "wallpaper", "theme"]
+    readonly property var tileKeys: ["wifi", "bt", "turbo", "battery", "gaming", "dnd", "xwayland", "wallpaper", "theme", "claude", "laptop", "gpu"]
 
-    function computeLayouts(W, H) {
-        if (!W || W <= 0) W = 1920;
-        if (!H || H <= 0) H = 1200;
+    readonly property var wideTiles: ["turbo"]                 // ocupam 2 casas (chave de 3 posições)
 
-        const m = Math.round(Math.max(24, Math.min(50, W * 0.025)));  // margem da tela
-        const g = 14;                                                  // espaço entre cards
-        const R = W - m - 340;                                         // x da coluna direita (340px)
-        const bottom = H - m;
 
-        function box(x, y, w, h) { return { x: x, y: y, width: w, height: h }; }
-        function grid(x, y, cols, size, gap) { return { x: x, y: y, cols: cols, size: size, gap: gap }; }
-
-        // Duas colunas de painéis (usado nos layouts 1 e 3): coluna A (240px) + coluna B (340px, à direita)
-        function flanks(id, name, desc, ax) {
-            const clockY = m, calY = m + 140 + g, volY = calY + 195 + g, appsY = volY + 160 + g;
-            const musicY = m + 340 + g, tilesY = musicY + 160 + g;
-            return {
-                id: id, name: name, desc: desc, m: m, g: g,
-                pos: {
-                    clock:    box(ax, clockY, 240, 140),
-                    calendar: box(ax, calY, 240, 195),
-                    vol:      box(ax, volY, 113, 160),
-                    br:       box(ax + 127, volY, 113, 160),
-                    apps:     box(ax, appsY, 240, 68),
-                    weather:  box(R, m, 340, 340),
-                    music:    box(R, musicY, 340, 160)
-                },
-                tiles:  grid(R, tilesY, 4, 76, 12),
-                alt:    grid(ax, appsY + 68 + g, 3, 72, 12),   // tiles migram p/ baixo do Apps quando algo expande
-                expand: { x: R, y: tilesY },
-                lyrics: { music: { x: R, y: musicY, height: 420 }, tiles: "alt" }
-            };
-        }
-
-        // Layout 2: prateleira no topo, deixa toda a metade de baixo livre para janelas
-        const shelfVolX = m + 254 + 240 + g;
-        const shelfTilesX = shelfVolX + 172 + g;
-        const shelfMusicX = Math.min(shelfTilesX, R - g - 340);
-        const shelfMusicY = m + 76 * 2 + 12 + g;
-
-        // Layout 4: quatro cantos + console central
-        const rowY = bottom - 72;
-        const volY4 = bottom - 88;
-        const music4Y = volY4 - g - 160;
-        const lyr4H = Math.min(420, volY4 - g - (m + 340 + g));
-
-        // Layout 5: trilho esquerdo + palco direito
-        const cal5 = m + 140 + g, wea5 = cal5 + 195 + g;
-        const vol5 = m + 160 + g, br5 = vol5 + 68 + g, tiles5 = br5 + 68 + g;
-
-        return [
-            flanks(1, "Sonoma Flanks", "Equilíbrio Lateral", m),
-
-            {
-                id: 2, name: "Top Shelf", desc: "Prateleira Superior", m: m, g: g,
-                pos: {
-                    clock:    box(m, m, 240, 140),
-                    apps:     box(m, m + 140 + g, 240, 68),
-                    calendar: box(m + 254, m, 240, 195),
-                    vol:      box(shelfVolX, m, 172, 68),
-                    br:       box(shelfVolX, m + 82, 172, 68),
-                    music:    box(shelfMusicX, shelfMusicY, 340, 160),
-                    weather:  box(R, m, 340, 340)
-                },
-                tiles:  grid(shelfTilesX, m, 4, 76, 12),
-                alt:    grid(m, m + 140 + g + 68 + g, 3, 72, 12),
-                expand: { x: shelfTilesX, y: m },
-                expandOver: { music: { y: m + 290 + g } },
-                lyrics: { music: { x: shelfMusicX, y: shelfMusicY, height: 420 }, tiles: "keep" }
-            },
-
-            flanks(3, "Smart Sidebar", "Painel Direito", R - 240 - g),
-
-            {
-                id: 4, name: "Four Corners", desc: "Quatro Cantos HUD", m: m, g: g,
-                pos: {
-                    clock:    box(m, m, 240, 140),
-                    weather:  box(R, m, 340, 340),
-                    calendar: box(m, rowY - g - 195, 240, 195),
-                    apps:     box(m, rowY, 240, 72),
-                    music:    box(R, music4Y, 340, 160),
-                    vol:      box(R, volY4, 162, 88),
-                    br:       box(R + 178, volY4, 162, 88)
-                },
-                tiles:  grid(Math.round((W - 552) / 2), rowY, 7, 72, 8),
-                alt:    "keep",
-                expand: { x: Math.round((W - 340) / 2), y: rowY - g - 290 },
-                lyrics: { music: { x: R, y: volY4 - g - lyr4H, height: lyr4H }, tiles: "keep" }
-            },
-
-            {
-                id: 5, name: "Creative Studio", desc: "Trilho Esquerdo + Palco", m: m, g: g,
-                pos: {
-                    clock:    box(m, m, 240, 140),
-                    calendar: box(m, cal5, 240, 195),
-                    weather:  box(m, wea5, 240, 340),
-                    apps:     box(m, wea5 + 340 + g, 240, 68),
-                    music:    box(R, m, 340, 160),
-                    vol:      box(R, vol5, 340, 68),
-                    br:       box(R, br5, 340, 68)
-                },
-                tiles:  grid(R, tiles5, 4, 76, 12),
-                alt:    "below",
-                expand: { x: R, y: tiles5 },
-                lyrics: { music: { x: R, y: m, height: 420 }, tiles: "shift", dy: 260, shift: ["vol", "br"] }
-            }
-        ];
-    }
 
     Timer {
         id: relayoutTimer
@@ -353,38 +281,44 @@ ShellRoot {
         onTriggered: shellRoot.applyLayout(shellRoot.currentLayout)
     }
 
-    readonly property var layouts: computeLayouts(desktopWindow.width, desktopWindow.height)
+    readonly property var layouts: Layouts.compute(desktopWindow.width, desktopWindow.height, tileKeys, wideTiles)
 
     function collapseAllExpanded() {
         if (wWallpaper.isExpanded) wWallpaper.isExpanded = false;
         if (wWifi.isExpanded) wWifi.isExpanded = false;
         if (wBt.isExpanded) wBt.isExpanded = false;
+        if (wBattery.isExpanded) wBattery.isExpanded = false;
         if (desktopMusic.isLyricsOpen) desktopMusic.layoutMode = "wide";
     }
 
-    // Distribui os 6 tiles numa grade
-    function placeTiles(t, gr, keys) {
-        for (let i = 0; i < keys.length; i++) {
-            const c = i % gr.cols, r = Math.floor(i / gr.cols);
-            t[keys[i]] = { x: gr.x + c * (gr.size + gr.gap), y: gr.y + r * (gr.size + gr.gap), width: gr.size, height: gr.size };
-        }
-    }
+
+
+
 
     // Resolve a posição final de cada widget levando em conta lyrics / painel expandido
     function computeTargets(l, H) {
         const t = {};
         for (const k in l.pos) t[k] = Object.assign({}, l.pos[k]);
 
-        const expKey = wWifi.isExpanded ? "wifi" : (wBt.isExpanded ? "bt" : (wWallpaper.isExpanded ? "wallpaper" : ""));
+        const expKey = wWifi.isExpanded ? "wifi" : (wBt.isExpanded ? "bt" : (wWallpaper.isExpanded ? "wallpaper" : (wBattery.isExpanded ? "battery" : "")));
         let gr = l.tiles;
-        let keys = tileKeys.slice();
+        let keys = tileKeys.filter(k => !l.pos[k]);   // tiles posicionados à mão no layout (ex.: turbo no Orbit) saem da grade
 
+        const ey = Math.min(l.expand.y, H - l.m - 290);
         if (expKey !== "") {
-            const ey = Math.min(l.expand.y, H - l.m - 290);
-            if (l.alt === "below") gr = { x: gr.x, y: ey + 290 + l.g, cols: gr.cols, size: gr.size, gap: gr.gap };
+            if (l.alt === "below") {
+                const by = ey + 290 + l.g, n = tileKeys.length + wideTiles.length - 1;
+                let best = null;
+                for (let cols = 1; cols <= n; cols++) {
+                    const rows = Math.ceil(n / cols);
+                    const sz = Math.floor(Math.min(gr.size, (340 - (cols - 1) * gr.gap) / cols, (H - l.m - by - (rows - 1) * gr.gap) / rows));
+                    if (!best || sz > best.size) best = { x: gr.x, y: by, cols: cols, size: sz, gap: gr.gap };
+                }
+                gr = best;
+            }
             else if (l.alt !== "keep") gr = l.alt;
             if (l.alt !== "keep") keys = keys.filter(k => k !== expKey);
-            placeTiles(t, gr, keys);
+            Layouts.placeTiles(t, gr, keys, wideTiles);
             t[expKey] = { x: l.expand.x, y: ey, width: 340, height: 290 };
             if (l.expandOver && l.expandOver.music) Object.assign(t.music, l.expandOver.music);
         } else if (desktopMusic.isLyricsOpen) {
@@ -394,17 +328,39 @@ ShellRoot {
                 gr = { x: gr.x, y: gr.y + l.lyrics.dy, cols: gr.cols, size: gr.size, gap: gr.gap };
                 for (const k of l.lyrics.shift) t[k].y += l.lyrics.dy;
             }
-            placeTiles(t, gr, keys);
+            Layouts.placeTiles(t, gr, keys, wideTiles);
         } else {
-            placeTiles(t, gr, keys);
+            Layouts.placeTiles(t, gr, keys, wideTiles);
+        }
+
+        // Cava: desce p/ baixo do painel expandido quando precisa; some (animado) se não sobrar altura
+        if (t.cava) {
+            let cy = -1;
+            if (expKey !== "" && l.cavaExpand === "below") cy = ey + 290 + l.g;
+            else if (expKey === "" && desktopMusic.isLyricsOpen && l.cavaLyrics === "below") cy = t.music.y + l.lyrics.music.height + l.g;
+            if (cy >= 0) {
+                t.cava.x = t.music.x;
+                t.cava.width = 340;
+                t.cava.y = cy;
+                t.cava.height = H - l.m - cy;
+            }
+            t.cava.hidden = t.cava.height < 40;
+            if (t.cava.hidden) t.cava.height = 40;
+        }
+        // Widgets que o layout não posiciona somem no lugar: compostos (com "shown") via hidden, o resto via variant "hidden"
+        for (const k in widgetMap) {
+            const w = widgetMap[k];
+            if (!w || t[k]) continue;
+            t[k] = w.shown !== undefined ? { x: w.targetX, y: w.targetY, hidden: true } : { x: w.targetX, y: w.targetY, variant: "hidden" };
         }
         return t;
     }
 
     readonly property var widgetMap: ({
         clock: desktopClock, calendar: desktopCalendar, weather: desktopWeather, music: desktopMusic,
-        vol: wVol, br: wBr, apps: wApps, wifi: wWifi, bt: wBt, turbo: wTurbo,
-        dnd: wDnd, xwayland: wXwayland, wallpaper: wWallpaper, theme: wTheme
+        vol: wVol, br: wBr, apps: wApps, wifi: wWifi, bt: wBt, turbo: wTurbo, battery: wBattery, gaming: wGaming,
+        dnd: wDnd, xwayland: wXwayland, wallpaper: wWallpaper, theme: wTheme, claude: wClaude, laptop: wLaptop, gpu: wGpu,
+        cava: wCava, dock: wDock, island: wIsland
     })
 
     property var staggerQueue: []
@@ -414,6 +370,8 @@ ShellRoot {
         w.targetY = p.y;
         if (p.width !== undefined && w.targetWidth !== undefined) w.targetWidth = p.width;
         if (p.height !== undefined && w.targetHeight !== undefined) w.targetHeight = p.height;
+        if (w.shown !== undefined) w.shown = !p.hidden;
+        if (w.variant !== undefined) w.variant = p.variant || "classic";
     }
 
     Timer {
@@ -442,7 +400,9 @@ ShellRoot {
             const p = t[k];
             const changed = w.targetX !== p.x || w.targetY !== p.y
                 || (p.width !== undefined && w.targetWidth !== undefined && w.targetWidth !== p.width)
-                || (p.height !== undefined && w.targetHeight !== undefined && w.targetHeight !== p.height);
+                || (p.height !== undefined && w.targetHeight !== undefined && w.targetHeight !== p.height)
+                || (w.shown !== undefined && w.shown === !!p.hidden)
+                || (w.variant !== undefined && w.variant !== (p.variant || "classic"));
             if (changed) items.push({ w: w, p: p, order: p.x + p.y * 0.8 });
         }
         if (!stagger) {
@@ -457,7 +417,7 @@ ShellRoot {
     function applyLayout(idx) {
         const W = desktopWindow.width > 0 ? desktopWindow.width : 1920;
         const H = desktopWindow.height > 0 ? desktopWindow.height : 1200;
-        const lList = computeLayouts(W, H);
+        const lList = Layouts.compute(W, H, tileKeys, wideTiles);
         if (idx < 1 || idx > lList.length) idx = 1;
 
         const switched = layoutReady && idx !== currentLayout;
@@ -520,33 +480,25 @@ ShellRoot {
     function saveLayoutState(idx) {
         const json = "{\"layout\":" + idx + "}";
         layoutSaver.command = ["sh", "-c", "echo '" + json + "' > /home/gabriel/.config/quickshell/layout_state.json"];
+        layoutSaver.running = false;   // reinicia: em trocas rápidas a gravação anterior ainda rodava e a nova se perdia
         layoutSaver.running = true;
     }
 
     property string activeWallpaper: ""
 
+    // Cadeia de blur fica "live" por alguns frames após cada wallpaper novo: o Qt atualiza as 4 texturas
+    // em ordem de dependência a cada frame, então o vidro sempre converge p/ o wallpaper atual (trocas rápidas inclusas).
+    property bool blurLive: false
     Timer {
-        id: blurScheduler
-        interval: 32
+        id: blurSettleTimer
+        interval: 250
         repeat: false
-        property int step: 0
-        onTriggered: {
-            const chain = [masterWallpaperTex, wpDownTex, wpDown2Tex, masterBlurredTex];
-            chain[step].scheduleUpdate();
-            if (step < chain.length - 1) {
-                step += 1;
-                blurScheduler.interval = 32;
-                blurScheduler.start();
-            } else {
-                step = 0;
-            }
-        }
+        onTriggered: shellRoot.blurLive = false
     }
 
     function triggerMasterBlur() {
-        blurScheduler.step = 0;
-        blurScheduler.interval = 16;
-        blurScheduler.start();
+        shellRoot.blurLive = true;
+        blurSettleTimer.restart();
     }
 
     function broadcastWallpaper(path) {
@@ -578,11 +530,26 @@ ShellRoot {
         }
     }
 
+    // Hotplug/troca de monitor: a janela do painel não é recriada sozinha na tela nova, então recarrega o shell (soft, não mata processos filhos)
+    Connections {
+        target: Quickshell
+        function onScreensChanged() { screensReloadTimer.restart() }
+    }
+    Timer {
+        id: screensReloadTimer
+        interval: 600
+        repeat: false
+        onTriggered: Quickshell.reload(false)
+    }
+
     // ── Single Unified Desktop Panel Window (Adaptive Resolution) ──────
     // Consolidates all 13 widgets into 1 single Wayland bottom-layer surface.
     // Slashes compositor bandwidth by 92% and achieves rock-solid fluid animations.
     PanelWindow {
         id: desktopWindow
+
+        // Segue o monitor que estiver ligado (o modo externo desliga o eDP-1): sem isso a janela fica presa na tela removida
+        screen: Quickshell.screens.length > 0 ? Quickshell.screens[0] : null
 
         anchors.top: true
         anchors.bottom: true
@@ -608,11 +575,19 @@ ShellRoot {
             Region { item: wWifi.cardItem }
             Region { item: wBt.cardItem }
             Region { item: wTurbo.cardItem }
+            Region { item: wBattery.cardItem }
+            Region { item: wDock.cardItem }
+            Region { item: wIsland.cardItem }
+            Region { item: wGaming.cardItem }
             Region { item: wDnd.cardItem }
             Region { item: wXwayland.cardItem }
             Region { item: wWallpaper.cardItem }
             Region { item: wApps.cardItem }
             Region { item: wTheme.cardItem }
+            Region { item: wClaude.cardItem }
+            Region { item: wLaptop.cardItem }
+            Region { item: wGpu.cardItem }
+            Region { item: wCava.shown ? wCava.cardItem : null }
             Region { item: xwaylandBannerCard }
         }
 
@@ -628,12 +603,16 @@ ShellRoot {
             fillMode: Image.PreserveAspectCrop
             smooth: true
             mipmap: false
-            asynchronous: false
+            asynchronous: true   // decodifica fora da thread da UI (não trava as animações ao trocar)
             cache: false
             visible: false
             onStatusChanged: {
                 if (status === Image.Ready) {
                     shellRoot.triggerMasterBlur();
+                } else if (status === Image.Loading) {
+                    // não capturar o Image vazio enquanto carrega: o vidro mantém o wallpaper anterior
+                    shellRoot.blurLive = false;
+                    blurSettleTimer.stop();
                 }
             }
         }
@@ -642,7 +621,7 @@ ShellRoot {
             id: masterWallpaperTex
             sourceItem: masterWallpaper
             hideSource: true
-            live: false
+            live: shellRoot.blurLive
             mipmap: false
             textureMirroring: ShaderEffectSource.MirrorVertically
         }
@@ -667,7 +646,7 @@ ShellRoot {
             id: wpDownTex
             sourceItem: wpDownPass
             hideSource: true
-            live: false
+            live: shellRoot.blurLive
             textureSize: Qt.size(desktopWindow._blurW, desktopWindow._blurH)
         }
 
@@ -683,7 +662,7 @@ ShellRoot {
             id: wpDown2Tex
             sourceItem: wpDown2Pass
             hideSource: true
-            live: false
+            live: shellRoot.blurLive
             textureSize: Qt.size(desktopWindow._b2W, desktopWindow._b2H)
         }
 
@@ -699,7 +678,7 @@ ShellRoot {
             id: masterBlurredTex
             sourceItem: wpUpPass
             hideSource: true
-            live: false
+            live: shellRoot.blurLive
             smooth: true
             textureSize: Qt.size(desktopWindow._blurW, desktopWindow._blurH)
         }
@@ -727,6 +706,7 @@ ShellRoot {
                 if (isLyricsOpen) {
                     if (wWifi.isExpanded) wWifi.isExpanded = false;
                     if (wBt.isExpanded) wBt.isExpanded = false;
+                    if (wBattery.isExpanded) wBattery.isExpanded = false;
                     if (wWallpaper.isExpanded) wWallpaper.isExpanded = false;
                 }
                 shellRoot.applyLayout(shellRoot.currentLayout);
@@ -737,8 +717,8 @@ ShellRoot {
         VolumeWidget {
             id: wVol
             sharedBackdrop: masterBlurredTex
-            volumeVal: shellRoot.systemVolume
-            isMuted: shellRoot.systemVolumeMuted
+            volumeVal: SystemStatus.volume
+            isMuted: SystemStatus.muted
             onVolumeChangeRequested: (pct) => shellRoot.setVolume(pct)
             onToggleMuteRequested: () => shellRoot.toggleMute()
         }
@@ -746,19 +726,20 @@ ShellRoot {
         BrightnessWidget {
             id: wBr
             sharedBackdrop: masterBlurredTex
-            brightnessVal: shellRoot.systemBrightness
+            brightnessVal: SystemStatus.brightness
             onBrightnessChangeRequested: (pct) => shellRoot.setBrightness(pct)
         }
 
         WifiTileWidget {
             id: wWifi
             sharedBackdrop: masterBlurredTex
-            isWifiOn: shellRoot.systemWifiOn
-            wifiSsid: shellRoot.systemWifiSsid
+            isWifiOn: SystemStatus.wifiOn
+            wifiSsid: SystemStatus.wifiSsid
             onToggleRequested: () => shellRoot.toggleWifi()
             onIsExpandedChanged: {
                 if (isExpanded) {
                     if (wBt.isExpanded) wBt.isExpanded = false;
+                    if (wBattery.isExpanded) wBattery.isExpanded = false;
                     if (wWallpaper.isExpanded) wWallpaper.isExpanded = false;
                     if (desktopMusic.isLyricsOpen) desktopMusic.layoutMode = "wide";
                 }
@@ -769,12 +750,13 @@ ShellRoot {
         BluetoothTileWidget {
             id: wBt
             sharedBackdrop: masterBlurredTex
-            isBtOn: shellRoot.systemBtOn
+            isBtOn: SystemStatus.btOn
             onToggleRequested: () => shellRoot.toggleBt()
             onIsExpandedChanged: {
                 if (isExpanded) {
                     if (wWifi.isExpanded) wWifi.isExpanded = false;
                     if (wWallpaper.isExpanded) wWallpaper.isExpanded = false;
+                    if (wBattery.isExpanded) wBattery.isExpanded = false;
                     if (desktopMusic.isLyricsOpen) desktopMusic.layoutMode = "wide";
                 }
                 shellRoot.applyLayout(shellRoot.currentLayout);
@@ -784,21 +766,51 @@ ShellRoot {
         TurboTileWidget {
             id: wTurbo
             sharedBackdrop: masterBlurredTex
-            isTurbo: shellRoot.systemTurbo
-            onToggleRequested: () => shellRoot.toggleTurbo()
+            powerMode: SystemStatus.power
+            onModeRequested: (m) => shellRoot.setPowerMode(m)
+        }
+
+        // Compostos dos layouts 6–10 (só aparecem onde o layout os posiciona)
+        DockWidget {
+            id: wDock
+            sharedBackdrop: masterBlurredTex
+        }
+        IslandWidget {
+            id: wIsland
+            sharedBackdrop: masterBlurredTex
+        }
+
+        BatteryTileWidget {
+            id: wBattery
+            sharedBackdrop: masterBlurredTex
+            onIsExpandedChanged: {
+                if (isExpanded) {
+                    if (wWifi.isExpanded) wWifi.isExpanded = false;
+                    if (wBt.isExpanded) wBt.isExpanded = false;
+                    if (wWallpaper.isExpanded) wWallpaper.isExpanded = false;
+                    if (desktopMusic.isLyricsOpen) desktopMusic.layoutMode = "wide";
+                }
+                shellRoot.applyLayout(shellRoot.currentLayout);
+            }
+        }
+
+        GamingTileWidget {
+            id: wGaming
+            sharedBackdrop: masterBlurredTex
+            onToggleRequested: () => GlassTheme.toggleGaming()
         }
 
         DndTileWidget {
             id: wDnd
             sharedBackdrop: masterBlurredTex
-            isDnd: shellRoot.systemDnd
+            isDnd: SystemStatus.dnd
             onToggleRequested: () => shellRoot.toggleDnd()
         }
 
         XwaylandTileWidget {
             id: wXwayland
             sharedBackdrop: masterBlurredTex
-            isXwayland: shellRoot.systemXwayland
+            isXwayland: SystemStatus.xwayland
             countdown: shellRoot.xwaylandCountdown
             onToggleRequested: () => shellRoot.toggleXwayland()
         }
@@ -807,10 +819,12 @@ ShellRoot {
             id: wWallpaper
             sharedBackdrop: masterBlurredTex
             onNextRequested: () => shellRoot.nextWallpaper()
+            onWallpaperSelected: (path) => shellRoot.broadcastWallpaper(path)
             onIsExpandedChanged: {
                 if (isExpanded) {
                     if (wWifi.isExpanded) wWifi.isExpanded = false;
                     if (wBt.isExpanded) wBt.isExpanded = false;
+                    if (wBattery.isExpanded) wBattery.isExpanded = false;
                     if (desktopMusic.isLyricsOpen) desktopMusic.layoutMode = "wide";
                 }
                 shellRoot.applyLayout(shellRoot.currentLayout);
@@ -820,6 +834,32 @@ ShellRoot {
         ThemeSwitchTileWidget {
             id: wTheme
             sharedBackdrop: masterBlurredTex
+        }
+
+        ClaudeTileWidget {
+            id: wClaude
+            sharedBackdrop: masterBlurredTex
+        }
+
+        CavaWidget {
+            id: wCava
+            sharedBackdrop: masterBlurredTex
+            wallpaper: shellRoot.activeWallpaper
+        }
+
+        LaptopTileWidget {
+            id: wLaptop
+            sharedBackdrop: masterBlurredTex
+            laptopOnly: shellRoot.systemLaptopOnly
+            onToggleRequested: () => shellRoot.toggleMonitorMode()
+        }
+
+        GpuTileWidget {
+            id: wGpu
+            sharedBackdrop: masterBlurredTex
+            amdMode: shellRoot.systemGpuMode === "amd"
+            countdown: shellRoot.gpuCountdown
+            onToggleRequested: () => shellRoot.toggleGpuMode()
         }
 
         AppsTileWidget {
@@ -832,15 +872,16 @@ ShellRoot {
         Item {
             id: xwaylandBannerCard
             x: (desktopWindow.width - 450) / 2
-            y: shellRoot.xwaylandRestartPending ? 48 : -95
+            y: shellRoot.rebootBannerOn ? 48 : -95
             width: 450
             height: 60
-            visible: shellRoot.xwaylandRestartPending || y > -90
+            visible: shellRoot.rebootBannerOn || y > -90
 
-            Behavior on y { NumberAnimation { duration: 350; easing.type: Easing.OutBack } }
+            Behavior on y { enabled: !GlassTheme.gaming; NumberAnimation { duration: 350; easing.type: Easing.OutBack } }
 
             LiquidGlass {
                 id: bannerGlass
+                sharedBackdrop: masterBlurredTex   // sem isto o vidro carregava a própria cópia do wallpaper + blur (sempre, mesmo escondido)
                 anchors.fill: parent
                 radius: 20
                 roundness: 6.5
@@ -883,8 +924,8 @@ ShellRoot {
 
                     Text {
                         anchors.centerIn: parent
-                        text: shellRoot.xwaylandCountdown + "s"
-                        font.family: sfRegular.name
+                        text: (shellRoot.gpuRestartPending ? shellRoot.gpuCountdown : shellRoot.xwaylandCountdown) + "s"
+                        font.family: "SF Pro Display"
                         font.pixelSize: 15
                         font.weight: Font.Black
                         color: "#ff9500"
@@ -899,16 +940,17 @@ ShellRoot {
 
                     Text {
                         width: parent.width
-                        text: shellRoot.systemXwayland ? "Ativando Xwayland..." : "Desativando Xwayland..."
-                        font.family: sfRegular.name
+                        text: shellRoot.gpuRestartPending ? (shellRoot.gpuTarget === "amd" ? "Trocando para AMD (bateria)..." : "Trocando para NVIDIA...")
+                              : (SystemStatus.xwayland ? "Ativando Xwayland..." : "Desativando Xwayland...")
+                        font.family: "SF Pro Display"
                         font.pixelSize: 13
                         font.weight: Font.Bold
                         color: "#ffffff"
                     }
                     Text {
                         width: parent.width
-                        text: "Reiniciando o PC em " + shellRoot.xwaylandCountdown + "s para aplicar..."
-                        font.family: sfRegular.name
+                        text: "Reiniciando o PC em " + (shellRoot.gpuRestartPending ? shellRoot.gpuCountdown : shellRoot.xwaylandCountdown) + "s para aplicar..."
+                        font.family: "SF Pro Display"
                         font.pixelSize: 11
                         color: "#ff9500"
                     }
@@ -924,12 +966,12 @@ ShellRoot {
                     border.color: Qt.rgba(1, 1, 1, 0.22)
                     anchors.verticalCenter: parent.verticalCenter
                     scale: cancelMouse.pressed ? 0.92 : 1.0
-                    Behavior on scale { NumberAnimation { duration: 90 } }
+                    Behavior on scale { enabled: !GlassTheme.gaming; NumberAnimation { duration: 90 } }
 
                     Text {
                         anchors.centerIn: parent
                         text: "Cancelar"
-                        font.family: sfRegular.name
+                        font.family: "SF Pro Display"
                         font.pixelSize: 11
                         font.weight: Font.DemiBold
                         color: "#ffffff"
@@ -940,7 +982,7 @@ ShellRoot {
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: shellRoot.cancelXwaylandCountdown()
+                        onClicked: shellRoot.gpuRestartPending ? shellRoot.cancelGpuCountdown() : shellRoot.cancelXwaylandCountdown()
                     }
                 }
 
@@ -952,12 +994,12 @@ ShellRoot {
                     color: rebootNowMouse.containsMouse ? "#ff3b30" : Qt.rgba(255/255, 59/255, 48/255, 0.85)
                     anchors.verticalCenter: parent.verticalCenter
                     scale: rebootNowMouse.pressed ? 0.92 : 1.0
-                    Behavior on scale { NumberAnimation { duration: 90 } }
+                    Behavior on scale { enabled: !GlassTheme.gaming; NumberAnimation { duration: 90 } }
 
                     Text {
                         anchors.centerIn: parent
                         text: "Reiniciar"
-                        font.family: sfRegular.name
+                        font.family: "SF Pro Display"
                         font.pixelSize: 11
                         font.weight: Font.Bold
                         color: "#ffffff"
@@ -968,7 +1010,7 @@ ShellRoot {
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: shellRoot.rebootNow()
+                        onClicked: shellRoot.gpuRestartPending ? shellRoot.applyGpuMode() : shellRoot.rebootNow()
                     }
                 }
             }
@@ -976,7 +1018,28 @@ ShellRoot {
     }
 
     // ── Fullscreen Launchpad ─────────────────────────────────
-    Launchpad {
+    // Launchpad só existe enquanto é usado: é criado ao abrir e descartado 60 s depois de fechar
+    // (fechado ele mantinha janela, lista de apps e ícones na memória: ~13 MB).
+    QtObject {
         id: launchpad
+        function toggleLaunchpad() {
+            if (!launchpadLoader.active) launchpadLoader.active = true;   // onLoaded abre
+            else if (launchpadLoader.item) launchpadLoader.item.toggleLaunchpad();
+        }
+    }
+    LazyLoader {
+        id: launchpadLoader
+        active: false
+        onItemChanged: if (item) item.toggleLaunchpad()
+        Launchpad {}
+    }
+    Timer { id: launchpadUnload; interval: 60000; onTriggered: launchpadLoader.active = false }
+    Connections {
+        target: launchpadLoader.item
+        ignoreUnknownSignals: true
+        function onShownChanged() {
+            if (launchpadLoader.item.shown) launchpadUnload.stop();
+            else launchpadUnload.restart();
+        }
     }
 }

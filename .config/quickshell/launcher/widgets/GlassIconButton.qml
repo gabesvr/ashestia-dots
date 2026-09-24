@@ -17,7 +17,7 @@ Item {
         anchors.fill: parent
         radius: width / 2
         color: mouse.pressed ? Qt.rgba(1, 1, 1, 0.30) : (mouse.containsMouse ? Qt.rgba(1, 1, 1, 0.22) : Qt.rgba(1, 1, 1, 0.13))
-        Behavior on color { ColorAnimation { duration: 120 } }
+        Behavior on color { enabled: !GlassTheme.gaming; ColorAnimation { duration: 120 } }
     }
 
     Image {
@@ -51,7 +51,7 @@ Item {
     }
 
     scale: mouse.pressed ? 0.9 : 1.0
-    Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutQuad } }
+    Behavior on scale { enabled: !GlassTheme.gaming; NumberAnimation { duration: 120; easing.type: Easing.OutQuad } }
 
     MouseArea {
         id: mouse

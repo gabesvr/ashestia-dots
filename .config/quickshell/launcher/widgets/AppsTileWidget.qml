@@ -14,15 +14,16 @@ Item {
         glass.setWallpaper(path);
     }
 
-    FontLoader {
-        id: sfRegular
-        source: Qt.resolvedUrl("fonts/sf_pro_display_regular.otf")
-    }
 
     property real targetX: 50
     property real targetY: 591
     property real targetWidth: 240
     property real targetHeight: 68
+    property string variant: "classic"   // visual escolhido pelo layout ("classic" = o de sempre)
+    // variant "hidden": some com fade (o layout não usa este widget)
+    opacity: variant === "hidden" ? 0 : 1
+    visible: opacity > 0.01
+    Behavior on opacity { enabled: !GlassTheme.gaming; NumberAnimation { duration: 260 } }
 
     signal openLaunchpadRequested()
 
@@ -36,13 +37,13 @@ Item {
         width: root.targetWidth
         height: root.targetHeight
 
-        Behavior on x { NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
-        Behavior on y { NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
-        Behavior on width { NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
-        Behavior on height { NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
+        Behavior on x { enabled: !GlassTheme.gaming; NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
+        Behavior on y { enabled: !GlassTheme.gaming; NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
+        Behavior on width { enabled: !GlassTheme.gaming; NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
+        Behavior on height { enabled: !GlassTheme.gaming; NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
 
         scale: tileMouse.pressed ? 0.94 : (tileMouse.containsMouse ? 1.02 : 1.0)
-        Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
+        Behavior on scale { enabled: !GlassTheme.gaming; NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
 
         LiquidGlass {
             id: glass
@@ -85,7 +86,7 @@ Item {
                 Text {
                     text: "Apps"
                     color: "#ffffff"
-                    font.family: sfRegular.name
+                    font.family: "SF Pro Display"
                     font.pixelSize: 13
                     font.weight: Font.Bold
                     anchors.verticalCenter: parent.verticalCenter
@@ -127,7 +128,7 @@ Item {
                     Text {
                         text: "Apps"
                         color: "#ffffff"
-                        font.family: sfRegular.name
+                        font.family: "SF Pro Display"
                         font.pixelSize: 13
                         font.weight: Font.Bold
                     }
@@ -136,7 +137,7 @@ Item {
                         text: "Launchpad"
                         color: "#ffffff"
                         opacity: 0.65
-                        font.family: sfRegular.name
+                        font.family: "SF Pro Display"
                         font.pixelSize: 10
                     }
                 }

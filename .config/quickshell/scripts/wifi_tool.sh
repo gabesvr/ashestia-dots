@@ -21,22 +21,13 @@ get_status() {
     echo '{"enabled":true,"ssid":"","signal":0}'
 }
 
-cmd_list() {
-    local radio
-    radio=$(nmcli radio wifi 2>/dev/null || echo "disabled")
-    if [ "$radio" != "enabled" ]; then
-        echo '{"enabled":false,"networks":[]}'
-        return
-    fi
-
-    # Read cached AP list in 8ms with --rescan no (or rescan yes if explicitly requested)
-    local rescan_flag="--rescan no"
-    if [ "$1" = "rescan" ]; then
-        rescan_flag="--rescan yes"
-    fi
-
-    nmcli -t -f IN-USE,SSID,SIGNAL,SECURITY dev wifi list $rescan_flag 2>/dev/null | awk -F: '
+# Lista de redes em JSON (uma linha). "saved" = já tem perfil no NetworkManager (conecta sem pedir senha).
+print_list() {
+    local saved
+    saved=$(nmcli -t -f NAME,TYPE connection show 2>/dev/null | awk -F: '$2=="802-11-wireless"{print $1}')
+    nmcli -t -f IN-USE,SSID,SIGNAL,SECURITY dev wifi list --rescan no 2>/dev/null | awk -F: -v saved="$saved" '
     BEGIN {
+        n = split(saved, arr, "\n"); for (i = 1; i <= n; i++) known[arr[i]] = 1
         printf "{\"enabled\":true,\"networks\":["
         first = 1
     }
@@ -46,6 +37,7 @@ cmd_list() {
         signal = $3 + 0
         sec = $4
         is_locked = (length(sec) > 0 && sec != "--") ? "true" : "false"
+        is_saved = (ssid in known) ? "true" : "false"
 
         # Escape special chars in SSID and Security
         gsub(/\\/, "\\\\", ssid)
@@ -55,13 +47,30 @@ cmd_list() {
 
         if (ssid != "" && !seen[ssid]++) {
             if (!first) printf ","
-            printf "{\"in_use\":%s,\"ssid\":\"%s\",\"signal\":%d,\"security\":\"%s\",\"is_locked\":%s}", in_use, ssid, signal, sec, is_locked
+            printf "{\"in_use\":%s,\"ssid\":\"%s\",\"signal\":%d,\"security\":\"%s\",\"is_locked\":%s,\"saved\":%s}", in_use, ssid, signal, sec, is_locked, is_saved
             first = 0
         }
     }
     END {
         printf "]}\n"
     }'
+}
+
+# list        : lista em cache (instantânea)
+# list rescan : cache na hora + varredura nova, e imprime de novo quando ela termina (2 linhas).
+#               Necessário: com sinal bom o NM quase não varre sozinho (bgscan simple:30:-70:86400).
+cmd_list() {
+    local radio
+    radio=$(nmcli radio wifi 2>/dev/null || echo "disabled")
+    if [ "$radio" != "enabled" ]; then
+        echo '{"enabled":false,"networks":[]}'
+        return
+    fi
+    print_list
+    if [ "$1" = "rescan" ]; then
+        nmcli -t -f SSID dev wifi list --rescan yes >/dev/null 2>&1 || true
+        print_list
+    fi
 }
 
 cmd_connect() {
@@ -72,6 +81,8 @@ cmd_connect() {
 
     if [ -n "$pwd" ]; then
         out=$(nmcli dev wifi connect "$ssid" password "$pwd" 2>&1) || ret=$?
+    elif nmcli -t -f NAME connection show 2>/dev/null | grep -Fxq "$ssid"; then
+        out=$(nmcli connection up id "$ssid" 2>&1) || ret=$?
     else
         out=$(nmcli dev wifi connect "$ssid" 2>&1) || ret=$?
     fi

@@ -56,10 +56,6 @@ PanelWindow {
         glass.setWallpaper(path);
     }
 
-    FontLoader {
-        id: sfRegular
-        source: Qt.resolvedUrl("fonts/sf_pro_display_regular.otf")
-    }
 
     // ── Wi-Fi Lister Process ──
     Process {
@@ -120,7 +116,7 @@ PanelWindow {
         anchors.fill: parent
         color: "#000000"
         opacity: modalWindow.shown ? 0.35 : 0.0
-        Behavior on opacity { NumberAnimation { duration: 250; easing.type: Easing.OutQuad } }
+        Behavior on opacity { enabled: !GlassTheme.gaming; NumberAnimation { duration: 250; easing.type: Easing.OutQuad } }
 
         MouseArea {
             anchors.fill: parent
@@ -137,8 +133,8 @@ PanelWindow {
 
         opacity: modalWindow.shown ? 1.0 : 0.0
         scale: modalWindow.shown ? 1.0 : 0.90
-        Behavior on opacity { NumberAnimation { duration: 250; easing.type: Easing.OutCubic } }
-        Behavior on scale { NumberAnimation { duration: 300; easing.type: Easing.OutBack; easing.overshoot: 1.2 } }
+        Behavior on opacity { enabled: !GlassTheme.gaming; NumberAnimation { duration: 250; easing.type: Easing.OutCubic } }
+        Behavior on scale { enabled: !GlassTheme.gaming; NumberAnimation { duration: 300; easing.type: Easing.OutBack; easing.overshoot: 1.2 } }
 
         // Liquid Glass Background
         LiquidGlass {
@@ -183,7 +179,7 @@ PanelWindow {
                     anchors.verticalCenter: parent.verticalCenter
                     text: "Wi-Fi Networks"
                     color: "#ffffff"
-                    font.family: sfRegular.name
+                    font.family: "SF Pro Display"
                     font.pixelSize: 15
                     font.weight: Font.Bold
                 }
@@ -203,7 +199,7 @@ PanelWindow {
                         source: "file:///home/gabriel/.config/quickshell/assets/icons/refresh.svg"
                         fillMode: Image.PreserveAspectFit
                         rotation: modalWindow.isScanning ? 360 : 0
-                        Behavior on rotation { NumberAnimation { duration: 800; loops: Animation.Infinite } }
+                        Behavior on rotation { enabled: !GlassTheme.gaming; NumberAnimation { duration: 800; loops: Animation.Infinite } }
                     }
 
                     MouseArea {
@@ -243,7 +239,7 @@ PanelWindow {
                 visible: modalWindow.statusMsg !== ""
                 text: modalWindow.statusMsg
                 color: "#38bdf8"
-                font.family: sfRegular.name
+                font.family: "SF Pro Display"
                 font.pixelSize: 10
                 font.weight: Font.DemiBold
                 elide: Text.ElideRight
@@ -263,7 +259,7 @@ PanelWindow {
                     height: (modalWindow.selectedSsid === modelData.ssid) ? 105 : 44
                     radius: 14
                     color: modelData.in_use ? Qt.rgba(0.20, 0.50, 1.0, 0.28) : Qt.rgba(1, 1, 1, 0.08)
-                    Behavior on height { NumberAnimation { duration: 200; easing.type: Easing.OutQuad } }
+                    Behavior on height { enabled: !GlassTheme.gaming; NumberAnimation { duration: 200; easing.type: Easing.OutQuad } }
 
                     Column {
                         anchors.fill: parent
@@ -290,7 +286,7 @@ PanelWindow {
                                 Text {
                                     text: modelData.ssid || "Hidden Network"
                                     color: "#ffffff"
-                                    font.family: sfRegular.name
+                                    font.family: "SF Pro Display"
                                     font.pixelSize: 12
                                     font.weight: Font.DemiBold
                                 }
@@ -298,7 +294,7 @@ PanelWindow {
                                 Text {
                                     text: modelData.in_use ? "Connected" : (modelData.signal + "% • " + (modelData.security || "Open"))
                                     color: modelData.in_use ? "#34d399" : Qt.rgba(1, 1, 1, 0.6)
-                                    font.family: sfRegular.name
+                                    font.family: "SF Pro Display"
                                     font.pixelSize: 9
                                 }
                             }
@@ -340,7 +336,7 @@ PanelWindow {
                                         anchors.margins: 6
                                         echoMode: TextInput.Password
                                         color: "#ffffff"
-                                        font.family: sfRegular.name
+                                        font.family: "SF Pro Display"
                                         font.pixelSize: 11
                                         clip: true
                                         onTextChanged: modalWindow.enteredPassword = text
@@ -367,7 +363,7 @@ PanelWindow {
                                         anchors.centerIn: parent
                                         text: modelData.in_use ? "Disconnect" : "Connect"
                                         color: "#ffffff"
-                                        font.family: sfRegular.name
+                                        font.family: "SF Pro Display"
                                         font.pixelSize: 11
                                         font.weight: Font.Bold
                                     }

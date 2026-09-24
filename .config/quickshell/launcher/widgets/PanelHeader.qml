@@ -18,8 +18,6 @@ Item {
 
     height: 38
 
-    FontLoader { id: fRounded; source: Qt.resolvedUrl("fonts/sf_pro_rounded.otf") }
-    FontLoader { id: fText;    source: Qt.resolvedUrl("fonts/sf_pro_display_regular.otf") }
 
     // Ícone-selo
     Rectangle {
@@ -50,7 +48,7 @@ Item {
         Text {
             text: hdr.title
             color: "#ffffff"
-            font.family: fRounded.name
+            font.family: "SF Pro Rounded"
             font.pixelSize: 16
             font.weight: Font.Bold
             style: Text.Raised
@@ -60,7 +58,7 @@ Item {
             width: parent.width
             text: hdr.subtitle
             color: Qt.rgba(1, 1, 1, 0.78)
-            font.family: fText.name
+            font.family: "SF Pro Display"
             font.pixelSize: 10
             elide: Text.ElideRight
             visible: text !== ""

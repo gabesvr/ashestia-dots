@@ -15,7 +15,7 @@ Item {
         color: sw.on ? "#34c759" : Qt.rgba(1, 1, 1, 0.22)
         border.width: 1
         border.color: Qt.rgba(1, 1, 1, sw.on ? 0.0 : 0.18)
-        Behavior on color { ColorAnimation { duration: 200 } }
+        Behavior on color { enabled: !GlassTheme.gaming; ColorAnimation { duration: 200 } }
     }
 
     Rectangle {
@@ -25,7 +25,7 @@ Item {
         y: 2
         x: sw.on ? sw.width - width - 2 : 2
         color: "#ffffff"
-        Behavior on x { NumberAnimation { duration: 320; easing.type: Easing.OutBack; easing.overshoot: 1.1 } }
+        Behavior on x { enabled: !GlassTheme.gaming; NumberAnimation { duration: 320; easing.type: Easing.OutBack; easing.overshoot: 1.1 } }
     }
 
     MouseArea {

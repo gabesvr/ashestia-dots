@@ -15,19 +15,16 @@ Item {
         glass.setWallpaper(path);
     }
 
-    FontLoader {
-        id: sfProRounded
-        source: Qt.resolvedUrl("fonts/sf_pro_rounded.otf")
-    }
-    FontLoader {
-        id: sfRegular
-        source: Qt.resolvedUrl("fonts/sf_pro_display_regular.otf")
-    }
 
     property real targetX: 176
     property real targetY: 417
     property real targetWidth: 114
     property real targetHeight: 160
+    property string variant: "classic"   // visual escolhido pelo layout ("classic" = o de sempre)
+    // variant "hidden": some com fade (o layout não usa este widget)
+    opacity: variant === "hidden" ? 0 : 1
+    visible: opacity > 0.01
+    Behavior on opacity { enabled: !GlassTheme.gaming; NumberAnimation { duration: 260 } }
 
     property int brightnessVal: 80
 
@@ -43,13 +40,13 @@ Item {
         width: root.targetWidth
         height: root.targetHeight
 
-        Behavior on x { NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
-        Behavior on y { NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
-        Behavior on width { NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
-        Behavior on height { NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
+        Behavior on x { enabled: !GlassTheme.gaming; NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
+        Behavior on y { enabled: !GlassTheme.gaming; NumberAnimation { duration: 700; easing.type: Easing.OutBack; easing.overshoot: 0.75 } }
+        Behavior on width { enabled: !GlassTheme.gaming; NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
+        Behavior on height { enabled: !GlassTheme.gaming; NumberAnimation { duration: 560; easing.type: Easing.OutBack; easing.overshoot: 0.45 } }
 
         scale: cardMouse.pressed ? 0.96 : (cardMouse.containsMouse ? 1.02 : 1.0)
-        Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
+        Behavior on scale { enabled: !GlassTheme.gaming; NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
 
         LiquidGlass {
             id: glass
@@ -75,7 +72,7 @@ Item {
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: root.brightnessVal + "%"
                 color: "#ffffff"
-                font.family: sfProRounded.name
+                font.family: "SF Pro Rounded"
                 font.pixelSize: 13
                 font.weight: Font.Bold
                 style: Text.Outline
@@ -110,7 +107,7 @@ Item {
                     visible: height > 0
 
                     Behavior on height {
-                        enabled: !cardMouse.isDragging
+                        enabled: !GlassTheme.gaming && !cardMouse.isDragging
                         NumberAnimation { duration: 160; easing.type: Easing.OutCubic }
                     }
 
@@ -145,7 +142,7 @@ Item {
                     source: "file:///home/gabriel/.config/quickshell/assets/icons/brightness.svg"
                     fillMode: Image.PreserveAspectFit
                     opacity: (root.brightnessVal < 26) ? 0.95 : 0.0
-                    Behavior on opacity { NumberAnimation { duration: 150 } }
+                    Behavior on opacity { enabled: !GlassTheme.gaming; NumberAnimation { duration: 150 } }
                 }
 
                 Image {
@@ -162,7 +159,7 @@ Item {
                         colorizationColor: "#18181b"
                     }
                     opacity: (root.brightnessVal >= 26) ? 0.88 : 0.0
-                    Behavior on opacity { NumberAnimation { duration: 150 } }
+                    Behavior on opacity { enabled: !GlassTheme.gaming; NumberAnimation { duration: 150 } }
                 }
             }
         }
@@ -196,7 +193,7 @@ Item {
                         text: "DISPLAY"
                         color: "#ffffff"
                         opacity: 0.60
-                        font.family: sfRegular.name
+                        font.family: "SF Pro Display"
                         font.pixelSize: 9
                         font.weight: Font.Bold
                         font.letterSpacing: 1.2
@@ -209,7 +206,7 @@ Item {
                         text: root.brightnessVal + "%"
                         color: "#ffffff"
                         opacity: 0.90
-                        font.family: sfProRounded.name
+                        font.family: "SF Pro Rounded"
                         font.pixelSize: 11
                         font.weight: Font.Bold
                     }
@@ -234,7 +231,7 @@ Item {
                         color: Qt.rgba(1.0, 1.0, 1.0, 0.88)
 
                         Behavior on width {
-                            enabled: !cardMouse.isDragging
+                            enabled: !GlassTheme.gaming && !cardMouse.isDragging
                             NumberAnimation { duration: 160; easing.type: Easing.OutCubic }
                         }
                     }
@@ -269,7 +266,7 @@ Item {
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: root.brightnessVal + "%"
                     color: "#ffffff"
-                    font.family: sfProRounded.name
+                    font.family: "SF Pro Rounded"
                     font.pixelSize: 11
                     font.weight: Font.Bold
                 }
